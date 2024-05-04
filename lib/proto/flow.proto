@@ -1,0 +1,26 @@
+syntax = "proto3";
+package brainslurp;
+option go_package = "github.com/devnull-twitch/brainslurp/lib/proto/flow";
+
+import "lib/proto/issue.proto";
+
+message FlowRequirement {
+  IssueCategory in_category = 10;
+  repeated Tag has_tags = 20;
+  repeated Tag not_tags = 2;
+}
+
+message FlowActions {
+  string title = 1;
+  IssueCategory set_category = 10;
+  repeated Tag add_tags = 20;
+  repeated Tag remove_tags = 21;
+}
+
+message Flow {
+  uint64 number = 1;
+  string title = 2;
+  int64 created_at = 5;
+  repeated FlowRequirement requirements = 10;
+  repeated FlowActions actions = 15;
+}

@@ -1,0 +1,80 @@
+package shared
+
+import "strings"
+
+type HxLinkOptions struct {
+  UseButtonStyle bool
+  InButtonRow bool
+  PushURL bool
+  Method string
+  Swap string
+}
+
+func makeLinkButtonCSS(inRow bool) string {
+  classes := []string{
+    "px-4", "py-2", "text-white",
+    "bg-gradient-to-b", "from-cyan-500", "to-indigo-500", "hover:from-cyan-600", "hover:to-indigo-900",
+  }
+  if inRow {
+    classes = append(classes, "first:rounded-l-lg", "last:rounded-r-lg")
+  } else {
+    classes = append(classes, "rounded-lg")
+  }
+
+  return strings.Join(classes, " ")
+}
+
+templ HxLink(
+  targetURL templ.SafeURL,
+  targetSelector string,
+  opts HxLinkOptions,
+) {
+  <a 
+    if opts.UseButtonStyle {
+      class={ makeLinkButtonCSS(opts.InButtonRow) }
+    }
+    href={ targetURL }
+    hx-target={targetSelector}
+    if opts.PushURL {
+      hx-push-url="true"
+    }
+    if opts.Method == "" || opts.Method == "get" {
+      hx-get={ string(targetURL) }
+    }
+    if opts.Method == "post" {
+      hx-post={ string(targetURL) }
+    }
+    if opts.Method == "delete" {
+      hx-delete={ string(targetURL) }
+    }
+    if opts.Method == "put" {
+      hx-put={ string(targetURL) }
+    }
+    if opts.Swap != "" {
+      hx-swap={ opts.Swap }
+    }
+  >
+    { children... }
+  </a>
+}
+
+type ButtonOptions struct {
+  InButtonRow bool
+  OnClick templ.ComponentScript
+}
+
+templ FormButton(opts ButtonOptions) {
+  <button type="submit" class={ makeLinkButtonCSS(opts.InButtonRow) }>{ children... }</button>
+}
+
+templ Button(opts ButtonOptions) {
+  <button 
+    type="button"
+    class={ makeLinkButtonCSS(opts.InButtonRow) }
+    if opts.OnClick.Name != "" {
+      onclick={ opts.OnClick }
+    }
+  >
+    { children... }
+  </button>
+}

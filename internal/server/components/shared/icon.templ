@@ -1,0 +1,13 @@
+package shared
+
+import "fmt"
+
+func makeIconHref(iconName string) string {
+  return fmt.Sprintf("/assets/codicon.svg#%s", iconName)
+}
+
+templ Codicon(iconName string, small bool) {
+  <svg class={ templ.KV("w-12 h-12 p-3", !small), templ.KV("w-7 h-7 p-1", small) }>
+    <use xlink:href={ makeIconHref(iconName) } />
+  </svg>
+}

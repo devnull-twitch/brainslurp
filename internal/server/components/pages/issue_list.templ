@@ -1,0 +1,65 @@
+package pages
+
+import "fmt"
+import "github.com/devnull-twitch/brainslurp/internal/server/components/shared"
+import pb_issue "github.com/devnull-twitch/brainslurp/lib/proto/issue"
+import pb_flow "github.com/devnull-twitch/brainslurp/lib/proto/flow"
+import pb_view "github.com/devnull-twitch/brainslurp/lib/proto/view"
+
+func makeIssuesFilterPath(projectNo uint64, viewNo uint64) templ.SafeURL {
+	return templ.URL(fmt.Sprintf("/project/%d/issues/view/%d", projectNo, viewNo))
+}
+
+func makeIssuesUnfilteredPath(projectNo uint64) templ.SafeURL {
+	return templ.URL(fmt.Sprintf("/project/%d", projectNo))
+}
+
+templ List(projectNo uint64, issues []*pb_issue.Issue, mapFlowToIssue map[uint64][]*pb_flow.Flow, views []*pb_view.View) {
+	<html>
+		@header("Issue list")
+		@ListBody(projectNo, issues, mapFlowToIssue, views)
+	</html>
+}
+
+templ ListBody(projectNo uint64, issues []*pb_issue.Issue, mapFlowToIssue map[uint64][]*pb_flow.Flow, views []*pb_view.View) {
+	@body() {
+		<div class="container mx-auto">
+			<h2 class="text-2xl underline pb-4">Issues</h2>
+			<div class="flex pb-4">
+				@shared.HxLink(makeIssuesUnfilteredPath(projectNo), "#issue-list", shared.HxLinkOptions{
+					UseButtonStyle: true,
+					InButtonRow: true,
+					PushURL: true,
+				}) {
+					All
+				}
+				for _, view := range views {
+					@shared.HxLink(makeIssuesFilterPath(projectNo, view.GetNumber()), "#issue-list", shared.HxLinkOptions{
+						UseButtonStyle: true,
+						InButtonRow: true,
+						PushURL: true,
+					}) {
+						{ view.Title }
+					}
+				}
+				@shared.HxLink(templ.URL("/views/new"), "body", shared.HxLinkOptions{
+					UseButtonStyle: true,
+					InButtonRow: true,
+				}) {
+					+ New view
+				}
+			</div>
+			<div id="issue-list">
+				@ListItems(projectNo, issues, mapFlowToIssue)
+			</div>
+		</div>
+	}
+}
+
+templ ListItems(projectNo uint64, issues []*pb_issue.Issue, mapFlowToIssue map[uint64][]*pb_flow.Flow) {
+	<div class="flex flex-col">
+	for _, issue := range issues {
+		@shared.IssueRow(projectNo, issue, mapFlowToIssue[issue.GetNumber()])
+	}
+	</div>
+}

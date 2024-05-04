@@ -1,0 +1,30 @@
+package shared
+
+type FormFieldOptions struct {
+  Small bool
+  Placeholder string
+}
+
+templ FormField(name string, label string, fieldType string, opts FormFieldOptions) {
+  if opts.Small {
+    if fieldType == "color" {
+      <label for={ name } classs="mb-1">{ label }:</label>
+    }
+    @FormInput(name, fieldType, label)
+  } else {
+    <div class="flex flex-col mb-8">
+      <label for={ name } classs="mb-1">{ label }:</label>
+      @FormInput(name, fieldType, opts.Placeholder)
+    </div>
+  }
+}
+
+templ FormInput(name string, fieldType string, placeholder string) {
+  <input 
+    class={ "p-2 rounded", templ.KV("border border-slate-700", fieldType != "color") } 
+    type={ fieldType }
+    name={ name }
+    id={ name }
+    placeholder={ placeholder }
+  />
+}

@@ -1,0 +1,9 @@
+syntax = "proto3";
+package brainslurp;
+option go_package = "github.com/devnull-twitch/brainslurp/lib/proto/view";
+
+message View {
+  uint64 number = 1;
+  int64 created_at = 5;
+  string title = 20;
+}

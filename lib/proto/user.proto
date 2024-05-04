@@ -1,0 +1,15 @@
+syntax = "proto3";
+package brainslurp;
+option go_package = "github.com/devnull-twitch/brainslurp/lib/proto/user";
+
+message Membership {
+  uint64 project_no = 1;
+}
+
+message User {
+  uint64 number = 1;
+  int64 created_at = 2;
+  string name = 10;
+  bytes password_hash = 11;
+  repeated Membership memberships = 30;
+}

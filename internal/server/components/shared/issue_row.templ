@@ -1,0 +1,159 @@
+package shared
+
+import "fmt"
+
+import "github.com/crazy3lf/colorconv"
+import "github.com/sirupsen/logrus"
+import pb_issue "github.com/devnull-twitch/brainslurp/lib/proto/issue"
+import pb_flow "github.com/devnull-twitch/brainslurp/lib/proto/flow"
+
+func makeIssueRowID(no uint64) string {
+  return fmt.Sprintf("issue-no-%d", no)
+}
+
+func makeIssueDetailsID(no uint64) string {
+  return fmt.Sprintf("issue-details-%d", no)
+}
+
+func getTextColorFromBGColor(hexStr string) string {
+  c, err := colorconv.HexToColor(hexStr)
+  if err != nil {
+    logrus.WithFields(logrus.Fields{
+      "error": err,
+      "color": hexStr,
+    }).Warn("unable to check color")
+    return "#000"
+  }
+
+  _, _, l := colorconv.ColorToHSL(c)
+  if l < 0.5 {
+    return "#FFF"
+  } else {
+    return "#000"
+  }
+}
+
+css tagStyle(colorCode string) {
+  background-color: { colorCode };
+  color: { getTextColorFromBGColor(colorCode) };
+}
+
+func makeNewTagURL(projectNo uint64, issueNo uint64) templ.SafeURL {
+  return templ.URL(fmt.Sprintf("/project/%d/issue/%d/tags", projectNo, issueNo))
+}
+
+func makeRemoveTagURL(projectNo uint64, issueNo uint64, tag string) templ.SafeURL {
+  return templ.URL(fmt.Sprintf("/project/%d/issue/%d/tag/%s", projectNo, issueNo, tag))
+}
+
+script onContainerClick(containerId string) {
+  const cb = document.querySelector("#" + containerId + " input[type=checkbox][name=issue-no]");
+  cb.checked = !cb.checked;
+}
+
+script onShowDetails(containerId string) {
+  const container = document.querySelector("#" + containerId);
+  if (!container.classList.contains("hidden")) {
+    container.classList.add("hidden");
+  } else {
+    document.querySelectorAll(".brainslurp-detail:not(.hidden)").forEach((elem) => {
+      elem.classList.add("hidden")
+    });
+    
+    container.classList.remove("hidden");
+  }
+}
+
+templ IssueRow(projectNo uint64, issue *pb_issue.Issue, issueFlows []*pb_flow.Flow) {
+  <div class="mb-8" id={ makeIssueRowID(issue.GetNumber()) }>
+    <div class="px-2 shadow-lg bg-white flex items-center" onclick={ onContainerClick(makeIssueRowID(issue.GetNumber())) }>
+      <!-- Select CB -->
+      <div class="flex-initial">
+        <input type="checkbox" name="issue-no" value={ fmt.Sprintf("%d", issue.GetNumber()) } />
+      </div>
+
+      <!-- ICON -->
+      <div class="w-12 flex-initial">
+        switch issue.GetCategory() {
+          case pb_issue.IssueCategory_Unknown:
+            @Codicon("squirrel", false)
+          case pb_issue.IssueCategory_Bug:
+            @Codicon("bug", false)
+          case pb_issue.IssueCategory_Feature:
+            @Codicon("beaker", false)
+          case pb_issue.IssueCategory_Operations:
+            @Codicon("server-environment", false)
+          case pb_issue.IssueCategory_Question:
+            @Codicon("question", false)
+        }
+      </div>
+
+      <!-- TITLE -->
+      <span class="flex-1">{ issue.Title }</span>
+
+      <!-- TAGS -->
+      <div class="flex flex-initial mr-8">
+        for _, issueTag := range issue.Tags {
+          <div 
+            class={ tagStyle(issueTag.GetColorCode()), "px-2 my-1 rounded-lg flex items-center mr-1" }
+            onclick="event.stopPropagation();"
+          >
+            <span>{ issueTag.GetLabel() }</span>
+            @HxLink(makeRemoveTagURL(projectNo, issue.GetNumber(), issueTag.GetLabel()), "#" + makeIssueRowID(issue.GetNumber()), HxLinkOptions{
+              Method: "delete",
+              Swap: "outerHTML",
+            }) {
+              @Codicon("trash", true)
+            }
+          </div>
+        }
+      </div>
+
+      <!-- ACTIONS -->
+      <div class="flex flex-initial pr-4" onclick="event.stopPropagation();">
+        @Button(ButtonOptions{
+          InButtonRow: true,
+          OnClick: onShowDetails(makeIssueDetailsID(issue.GetNumber())),
+        }) {
+          Details
+        }
+        for _, issueFlow := range issueFlows {
+          for _, flowAction := range issueFlow.GetActions() {
+            <button type="button" class={ makeLinkButtonCSS(true) }>{ flowAction.GetTitle() }</button>
+          }
+        }
+      </div>
+    </div>
+
+    <!-- Issue Details box -->
+    <div class="hidden bg-white brainslurp-detail" id={ makeIssueDetailsID(issue.GetNumber()) }>
+      <div class="flex justify-around">
+        
+        <!-- Tag Form -->
+        <form
+          hx-post={ string(makeNewTagURL(projectNo, issue.GetNumber())) }
+          hx-target={ "#" + makeIssueRowID(issue.GetNumber()) }
+          hx-swap="outerHTML"
+          class="w-1/3 flex-initial pb-2"
+        >
+          <h4 class="text-lg pb-1 italic">Add Tag</h4>
+          @FormField("title", "Tag", "text", FormFieldOptions{})
+          @FormField("color", "Hex color code", "color", FormFieldOptions{})
+          @FormButton(ButtonOptions{}) {
+            Add
+          }
+        </form>
+
+        <!-- Flow list -->
+        <div class="w-1/3 shrink">
+          <h4 class="text-lg pb-1 italic">Connected flows</h4>
+          <ol class="list-disc list-inside">
+            for _, issueFlow := range issueFlows {
+              <li>{ issueFlow.GetTitle() }</li>
+            }
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+}
