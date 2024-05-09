@@ -12,7 +12,6 @@ message FlowRequirement {
 
 message FlowActions {
   string title = 1;
-  IssueCategory set_category = 10;
   repeated Tag add_tags = 20;
   repeated Tag remove_tags = 21;
 }

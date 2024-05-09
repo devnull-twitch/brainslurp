@@ -89,13 +89,13 @@ templ IssueRow(projectNo uint64, issue *pb_issue.Issue, issueFlows []*pb_flow.Fl
       </div>
 
       <!-- TITLE -->
-      <span class="flex-1">{ issue.Title }</span>
+      <span class="flex-1">{ issue.GetTitle() }</span>
 
       <!-- TAGS -->
       <div class="flex flex-initial mr-8">
         for _, issueTag := range issue.Tags {
           <div 
-            class={ tagStyle(issueTag.GetColorCode()), "px-2 my-1 rounded-lg flex items-center mr-1" }
+            class={ tagStyle(issueTag.GetColorCode()), "px-2 my-1 rounded-lg items-center mr-1" }
             onclick="event.stopPropagation();"
           >
             <span>{ issueTag.GetLabel() }</span>

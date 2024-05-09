@@ -1,0 +1,74 @@
+package pages
+
+import "fmt"
+import "github.com/devnull-twitch/brainslurp/internal/server/components/shared"
+
+import pb_flow "github.com/devnull-twitch/brainslurp/lib/proto/flow"
+
+templ FlowList(projectNo uint64, flowList []*pb_flow.Flow) {
+  <html>
+		@header("Flows")
+		@FlowListBody(projectNo, flowList)
+	</html>
+}
+
+func makeFlowCreatePageURL(projectNo uint64) templ.SafeURL {
+  return templ.URL(fmt.Sprintf("/project/%d/flows/new", projectNo))
+}
+
+templ FlowListBody(projectNo uint64, flowList []*pb_flow.Flow) {
+	@body(projectNo) {
+		<div class="container mx-auto">
+      <div class="flex justify-between items-start">
+			  <h2 class="text-2xl underline pb-4">Flows</h2>
+        @shared.HxLink(makeFlowCreatePageURL(projectNo), "body", shared.HxLinkOptions{
+          UseButtonStyle: true,
+          PushURL: true,
+        }) {
+          @shared.Codicon("add", true)
+          New
+        }
+      </div>
+      <div id="flow-list">
+				@FlowListItems(flowList)
+			</div>
+    </div>
+  }
+}
+
+templ FlowListItems(flowList []*pb_flow.Flow) {
+  <div class="flex flex-col">
+	for _, flowObj := range flowList {
+		@FlowListItem(flowObj)
+	}
+	</div>
+}
+
+func makeflowRowID(no uint64) string {
+  return fmt.Sprintf("flow-no-%d", no)
+}
+
+templ FlowListItem(flowObj *pb_flow.Flow) {
+  <div class="mb-8" id={ makeflowRowID(flowObj.GetNumber()) }>
+    <div class="px-2 shadow-lg bg-white flex items-center">
+      <span class="flex-1">{ flowObj.GetTitle() }</span>
+
+      <div class="flex flex-none pr-4 py-2">
+        @shared.HxLink("#", "#" + makeflowRowID(flowObj.GetNumber()), shared.HxLinkOptions{
+          UseButtonStyle: true,
+          InButtonRow: true,
+        }) {
+          @shared.Codicon("edit", true)
+          Edit
+        }
+        @shared.HxLink("#", "#" + makeflowRowID(flowObj.GetNumber()), shared.HxLinkOptions{
+          UseButtonStyle: true,
+          InButtonRow: true,
+        }) {
+          @shared.Codicon("trash", true)
+          Delete
+        }
+      </div>
+    </div>
+  </div>
+}

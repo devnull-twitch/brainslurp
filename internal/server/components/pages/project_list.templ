@@ -12,21 +12,33 @@ templ ProjectListing(projects []project.ListItem) {
 }
 
 func makeProjectIssueLink(no uint64) templ.SafeURL {
-  return templ.URL(fmt.Sprintf("/%d", no))
+  return templ.URL(fmt.Sprintf("/project/%d/issues", no))
+}
+
+func makeFlowListURL(no uint64) templ.SafeURL {
+  return templ.URL(fmt.Sprintf("/project/%d/flows", no))
 }
 
 templ ProjectListingBody(projects []project.ListItem) {
-	@body() {
+	@body(0) {
     <div class="container mx-auto flex">
       for _, projectEntry := range projects {
         <div class="flex flex-col items-center grow-0 shrink w-1/4 bg-white shadow-lg p-8">
           <h3 class="text-xl mb-8">{ projectEntry.Name }</h3>
-          @shared.HxLink(makeProjectIssueLink(projectEntry.No), "body", shared.HxLinkOptions{
-            UseButtonStyle: true,
-            PushURL: true,
-          }) {
-            Show Issues
-          }
+          <div class="flex justify-around w-full">
+            @shared.HxLink(makeProjectIssueLink(projectEntry.No), "body", shared.HxLinkOptions{
+              UseButtonStyle: true,
+              PushURL: true,
+            }) {
+              Show Issues
+            }
+            @shared.HxLink(makeFlowListURL(projectEntry.No), "body", shared.HxLinkOptions{
+              UseButtonStyle: true,
+              PushURL: true,
+            }) {
+              Show Flows
+            }
+          </div>
         </div>
       }
     </div>

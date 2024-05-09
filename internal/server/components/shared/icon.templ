@@ -7,7 +7,7 @@ func makeIconHref(iconName string) string {
 }
 
 templ Codicon(iconName string, small bool) {
-  <svg class={ templ.KV("w-12 h-12 p-3", !small), templ.KV("w-7 h-7 p-1", small) }>
+  <svg class={ "inline", templ.KV("w-12 h-12 p-3", !small), templ.KV("w-7 h-7 p-1", small) }>
     <use xlink:href={ makeIconHref(iconName) } />
   </svg>
 }

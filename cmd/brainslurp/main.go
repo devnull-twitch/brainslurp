@@ -56,6 +56,10 @@ func main() {
 		Title:      "Test no1",
 		ViewStatus: []uint64{viewNo},
 		Category:   pb_issue.IssueCategory_Bug,
+		Tags: []*pb_issue.Tag{
+			{Label: "ToDo", ColorCode: "#FF0000"},
+			{Label: "Unstoppable", ColorCode: "#AAAA00"},
+		},
 	}); err != nil {
 		panic(err)
 	}
@@ -75,6 +79,9 @@ func main() {
 		Title:      "Test no3",
 		ViewStatus: []uint64{viewNo},
 		Category:   pb_issue.IssueCategory_Operations,
+		Tags: []*pb_issue.Tag{
+			{Label: "Test", ColorCode: "#880099"},
+		},
 	}); err != nil {
 		panic(err)
 	}
@@ -89,18 +96,18 @@ func main() {
 
 	flows.Create(db, flows.CreateOptions{
 		ProjectNo: projectNo,
-		Title:     "Complete Feature",
+		Title:     "Setup Test",
 		Requirements: []*pb_flow.FlowRequirement{
 			{
 				InCategory: pb_issue.IssueCategory_Feature,
-				HasTags:    []*pb_issue.Tag{{Label: "ToDo"}},
+				HasTags:    []*pb_issue.Tag{{Label: "Test"}},
 			},
 		},
 		Actions: []*pb_flow.FlowActions{
 			{
-				Title:      "Finish",
-				RemoveTags: []*pb_issue.Tag{{Label: "ToDo"}},
-				AddTags:    []*pb_issue.Tag{{Label: "Finished", ColorCode: "#0F0"}},
+				Title:      "Tescht",
+				RemoveTags: []*pb_issue.Tag{{Label: "Test"}},
+				AddTags:    []*pb_issue.Tag{{Label: "tested", ColorCode: "#00FF00"}},
 			},
 		},
 	})

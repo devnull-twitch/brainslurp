@@ -185,9 +185,9 @@ func IssueRow(projectNo uint64, issue *pb_issue.Issue, issueFlows []*pb_flow.Flo
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var5 string
-		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(issue.Title)
+		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(issue.GetTitle())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/shared/issue_row.templ`, Line: 92, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/shared/issue_row.templ`, Line: 92, Col: 45}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -198,7 +198,7 @@ func IssueRow(projectNo uint64, issue *pb_issue.Issue, issueFlows []*pb_flow.Flo
 			return templ_7745c5c3_Err
 		}
 		for _, issueTag := range issue.Tags {
-			var templ_7745c5c3_Var6 = []any{tagStyle(issueTag.GetColorCode()), "px-2 my-1 rounded-lg flex items-center mr-1"}
+			var templ_7745c5c3_Var6 = []any{tagStyle(issueTag.GetColorCode()), "px-2 my-1 rounded-lg items-center mr-1"}
 			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var6...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err

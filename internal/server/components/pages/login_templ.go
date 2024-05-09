@@ -43,11 +43,17 @@ func Login() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = shared.FormField("username", "Username", "email", shared.FormFieldOptions{Placeholder: "me@example.com"}).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = shared.FormField("username", "Username", "email", shared.FormFieldOptions{
+				ExtraSpacey: true,
+				Placeholder: "me@example.com",
+			}).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = shared.FormField("password", "Password", "password", shared.FormFieldOptions{Placeholder: "*******"}).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = shared.FormField("password", "Password", "password", shared.FormFieldOptions{
+				ExtraSpacey: true,
+				Placeholder: "*******",
+			}).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -83,7 +89,7 @@ func Login() templ.Component {
 			}
 			return templ_7745c5c3_Err
 		})
-		templ_7745c5c3_Err = body().Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = body(0).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

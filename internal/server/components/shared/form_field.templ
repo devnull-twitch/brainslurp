@@ -2,6 +2,7 @@ package shared
 
 type FormFieldOptions struct {
   Small bool
+  ExtraSpacey bool
   Placeholder string
 }
 
@@ -12,7 +13,7 @@ templ FormField(name string, label string, fieldType string, opts FormFieldOptio
     }
     @FormInput(name, fieldType, label)
   } else {
-    <div class="flex flex-col mb-8">
+    <div class={ "flex flex-col", templ.KV("mb-8", opts.ExtraSpacey), templ.KV("mb-4", !opts.ExtraSpacey) }>
       <label for={ name } classs="mb-1">{ label }:</label>
       @FormInput(name, fieldType, opts.Placeholder)
     </div>
@@ -27,4 +28,23 @@ templ FormInput(name string, fieldType string, placeholder string) {
     id={ name }
     placeholder={ placeholder }
   />
+}
+
+templ FormDropdownField(name string, label string, opts FormFieldOptions) {
+  if opts.Small {
+    @FormDropdown(name)
+  } else {
+    <div class={ "flex flex-col", templ.KV("mb-8", opts.ExtraSpacey), templ.KV("mb-4", !opts.ExtraSpacey) }>
+      <label for={ name } classs="mb-1">{ label }:</label>
+      @FormDropdown(name) {
+        { children... }
+      }
+    </div>
+  }
+}
+
+templ FormDropdown(name string) {
+  <select class="p-2 rounded border border-slate-700" name={ name } id={ name }>
+    { children... }
+  </select>
 }

@@ -14,7 +14,7 @@ import (
 )
 
 func UpdateIssues(db *badger.DB, projectNo uint64, flow *pb_flow.Flow) {
-	db.Update(func(txn *badger.Txn) error {
+	if err := db.Update(func(txn *badger.Txn) error {
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
 		defer it.Close()
 		prefix := make([]byte, binary.MaxVarintLen64+1)
@@ -63,7 +63,9 @@ func UpdateIssues(db *badger.DB, projectNo uint64, flow *pb_flow.Flow) {
 		}
 
 		return nil
-	})
+	}); err != nil {
+		logrus.WithError(err).Error("error updaing issues for flow")
+	}
 }
 
 func hasFlow(issueObj *pb_issue.Issue, flowNo uint64) bool {

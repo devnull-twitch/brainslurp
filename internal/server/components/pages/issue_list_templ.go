@@ -175,7 +175,7 @@ func ListBody(projectNo uint64, issues []*pb_issue.Issue, mapFlowToIssue map[uin
 			}
 			return templ_7745c5c3_Err
 		})
-		templ_7745c5c3_Err = body().Render(templ.WithChildren(ctx, templ_7745c5c3_Var3), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = body(projectNo).Render(templ.WithChildren(ctx, templ_7745c5c3_Var3), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

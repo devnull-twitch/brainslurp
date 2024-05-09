@@ -26,7 +26,9 @@ func userIsInProject(userObj user.User, projectNo uint64) bool {
 	return false
 }
 
-// HandleIssueList handles requests for /project/{projectNo}/issues/view/{viewNo}
+// HandleIssueList handles requests for:
+// * /project/{projectNo}/issues/view/{viewNo}
+// * /project/{projectNo}/issues
 func HandleIssueList(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		projectNo, err := strconv.Atoi(r.PathValue("projectNo"))
@@ -105,7 +107,7 @@ func HandleIssueList(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 			if r.Header.Get("HX-Target") == "issue-list" {
 				pages.ListItems(uint64(projectNo), issueListe, mapFlowsToIssues).Render(r.Context(), w)
 			} else {
-				pages.List(uint64(projectNo), issueListe, mapFlowsToIssues, viewList).Render(r.Context(), w)
+				pages.ListBody(uint64(projectNo), issueListe, mapFlowsToIssues, viewList).Render(r.Context(), w)
 			}
 		} else {
 			pages.List(uint64(projectNo), issueListe, mapFlowsToIssues, viewList).Render(r.Context(), w)
