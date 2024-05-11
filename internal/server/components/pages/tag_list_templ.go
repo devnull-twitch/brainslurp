@@ -10,12 +10,11 @@ import "context"
 import "io"
 import "bytes"
 
-import "fmt"
+import pb_tag "github.com/devnull-twitch/brainslurp/lib/proto/tag"
 import "github.com/devnull-twitch/brainslurp/internal/server/components/shared"
+import "fmt"
 
-import pb_flow "github.com/devnull-twitch/brainslurp/lib/proto/flow"
-
-func FlowList(projectNo uint64, flowList []*pb_flow.Flow) templ.Component {
+func TagListing(projectNo uint64, tags []*pb_tag.Tag) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 		if !templ_7745c5c3_IsBuffer {
@@ -32,11 +31,11 @@ func FlowList(projectNo uint64, flowList []*pb_flow.Flow) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = header("Flows").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = header("Project tags").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = FlowListBody(projectNo, flowList).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = TagListingBody(projectNo, tags).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -51,11 +50,11 @@ func FlowList(projectNo uint64, flowList []*pb_flow.Flow) templ.Component {
 	})
 }
 
-func makeFlowCreatePageURL(projectNo uint64) templ.SafeURL {
-	return templ.URL(fmt.Sprintf("/project/%d/flows/new", projectNo))
+func makeTagCreatePageURL(projectNo uint64) templ.SafeURL {
+	return templ.URL(fmt.Sprintf("/project/%d/tags/new", projectNo))
 }
 
-func FlowListBody(projectNo uint64, flowList []*pb_flow.Flow) templ.Component {
+func TagListingBody(projectNo uint64, tags []*pb_tag.Tag) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 		if !templ_7745c5c3_IsBuffer {
@@ -74,7 +73,7 @@ func FlowListBody(projectNo uint64, flowList []*pb_flow.Flow) templ.Component {
 				templ_7745c5c3_Buffer = templ.GetBuffer()
 				defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"container mx-auto\"><div class=\"flex justify-between items-start\"><h2 class=\"text-2xl underline pb-4\">Flows</h2>")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"container mx-auto\"><div class=\"flex justify-between items-start\"><h2 class=\"text-2xl underline pb-4\">Tags</h2>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -97,18 +96,18 @@ func FlowListBody(projectNo uint64, flowList []*pb_flow.Flow) templ.Component {
 				}
 				return templ_7745c5c3_Err
 			})
-			templ_7745c5c3_Err = shared.HxLink(makeFlowCreatePageURL(projectNo), "body", shared.HxLinkOptions{
+			templ_7745c5c3_Err = shared.HxLink(makeTagCreatePageURL(projectNo), "body", shared.HxLinkOptions{
 				UseButtonStyle: true,
 				PushURL:        true,
 			}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var4), templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div><div id=\"flow-list\">")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div><div id=\"tag-list\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = FlowListItems(flowList).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = TagListItems(tags).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -132,7 +131,7 @@ func FlowListBody(projectNo uint64, flowList []*pb_flow.Flow) templ.Component {
 	})
 }
 
-func FlowListItems(flowList []*pb_flow.Flow) templ.Component {
+func TagListItems(tags []*pb_tag.Tag) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 		if !templ_7745c5c3_IsBuffer {
@@ -149,8 +148,8 @@ func FlowListItems(flowList []*pb_flow.Flow) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		for _, flowObj := range flowList {
-			templ_7745c5c3_Err = FlowListItem(flowObj).Render(ctx, templ_7745c5c3_Buffer)
+		for _, tagObj := range tags {
+			templ_7745c5c3_Err = TagListItem(tagObj).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -166,11 +165,11 @@ func FlowListItems(flowList []*pb_flow.Flow) templ.Component {
 	})
 }
 
-func makeflowRowID(no uint64) string {
-	return fmt.Sprintf("flow-no-%d", no)
+func makeTagRowID(number uint64) string {
+	return fmt.Sprintf("tag-%d", number)
 }
 
-func FlowListItem(flowObj *pb_flow.Flow) templ.Component {
+func TagListItem(tagObj *pb_tag.Tag) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 		if !templ_7745c5c3_IsBuffer {
@@ -194,11 +193,24 @@ func FlowListItem(flowObj *pb_flow.Flow) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var8 string
-			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(flowObj.GetTitle())
+			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(tagObj.GetTitle())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_list.templ`, Line: 53, Col: 45}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/tag_list.templ`, Line: 52, Col: 44}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</span> <span class=\"flex-1\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var9 string
+			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(tagObj.GetHexColor())
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/tag_list.templ`, Line: 53, Col: 47}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -206,7 +218,7 @@ func FlowListItem(flowObj *pb_flow.Flow) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Var9 := templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
+			templ_7745c5c3_Var10 := templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 				templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 				if !templ_7745c5c3_IsBuffer {
 					templ_7745c5c3_Buffer = templ.GetBuffer()
@@ -225,14 +237,14 @@ func FlowListItem(flowObj *pb_flow.Flow) templ.Component {
 				}
 				return templ_7745c5c3_Err
 			})
-			templ_7745c5c3_Err = shared.HxLink("#", "#"+makeflowRowID(flowObj.GetNumber()), shared.HxLinkOptions{
+			templ_7745c5c3_Err = shared.HxLink("#", "#"+makeTagRowID(tagObj.GetNumber()), shared.HxLinkOptions{
 				UseButtonStyle: true,
 				InButtonRow:    true,
-			}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var9), templ_7745c5c3_Buffer)
+			}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var10), templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Var10 := templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
+			templ_7745c5c3_Var11 := templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 				templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 				if !templ_7745c5c3_IsBuffer {
 					templ_7745c5c3_Buffer = templ.GetBuffer()
@@ -251,10 +263,10 @@ func FlowListItem(flowObj *pb_flow.Flow) templ.Component {
 				}
 				return templ_7745c5c3_Err
 			})
-			templ_7745c5c3_Err = shared.HxLink("#", "#"+makeflowRowID(flowObj.GetNumber()), shared.HxLinkOptions{
+			templ_7745c5c3_Err = shared.HxLink("#", "#"+makeTagRowID(tagObj.GetNumber()), shared.HxLinkOptions{
 				UseButtonStyle: true,
 				InButtonRow:    true,
-			}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var10), templ_7745c5c3_Buffer)
+			}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var11), templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -267,7 +279,7 @@ func FlowListItem(flowObj *pb_flow.Flow) templ.Component {
 			}
 			return templ_7745c5c3_Err
 		})
-		templ_7745c5c3_Err = shared.ListItem(makeflowRowID(flowObj.GetNumber()), templ.ComponentScript{}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var7), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = shared.ListItem(makeTagRowID(tagObj.GetNumber()), templ.ComponentScript{}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var7), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

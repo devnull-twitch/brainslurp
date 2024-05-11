@@ -8,7 +8,8 @@ import (
 	"github.com/devnull-twitch/brainslurp/internal/server/components/pages"
 	"github.com/devnull-twitch/brainslurp/internal/server/components/shared"
 	"github.com/devnull-twitch/brainslurp/lib/issues"
-	"github.com/devnull-twitch/brainslurp/lib/proto/issue"
+	pb_tag "github.com/devnull-twitch/brainslurp/lib/proto/tag"
+	"github.com/devnull-twitch/brainslurp/lib/tag"
 	"github.com/dgraph-io/badger/v4"
 	"github.com/sirupsen/logrus"
 )
@@ -40,10 +41,16 @@ func HandleNewIssueTag(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 					return
 				}
 
-				newTagTitle := r.FormValue("title")
-				newTagColor := r.FormValue("color")
+				newTagIdStr := r.FormValue("tag_id")
+				newTagId, err := strconv.Atoi(newTagIdStr)
+				if err != nil {
+					logrus.WithError(err).Warn("error getting issue")
+					w.WriteHeader(http.StatusInternalServerError)
+					pages.Error("Error updating issue").Render(r.Context(), w)
+					return
+				}
 
-				issueObj.Tags = append(issueObj.Tags, &issue.Tag{Label: newTagTitle, ColorCode: newTagColor})
+				issueObj.TagNumbers = append(issueObj.GetTagNumbers(), uint64(newTagId))
 				modIssue, issueFlows, err := issues.Update(db, uint64(projectNo), issueObj)
 				if err != nil {
 					logrus.WithError(err).Warn("error updating issue")
@@ -52,15 +59,25 @@ func HandleNewIssueTag(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 					return
 				}
 
+				tagMap := make(map[uint64]*pb_tag.Tag)
+				tagList, err := tag.GetMany(db, uint64(projectNo), issueObj.TagNumbers)
+				if err != nil {
+					pages.Error("Error loading issues").Render(r.Context(), w)
+					return
+				}
+				for _, tagObj := range tagList {
+					tagMap[tagObj.GetNumber()] = tagObj
+				}
+
 				if r.Header.Get("HX-Request") != "" {
-					shared.IssueRow(uint64(projectNo), modIssue, issueFlows).Render(r.Context(), w)
+					shared.IssueRow(uint64(projectNo), modIssue, issueFlows, tagMap).Render(r.Context(), w)
 				}
 			},
 		)
 	}
 }
 
-// HandleIssueTag handles requests for DELETE /project/{projectNo}/issue/{issueNo}/tag/{tagName}
+// HandleIssueTag handles requests for DELETE /project/{projectNo}/issue/{issueNo}/tag/{tagNumber}
 func HandleIssueTag(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		walkChain(
@@ -88,14 +105,23 @@ func HandleIssueTag(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 					return
 				}
 
+				removeTagNoStr := r.PathValue("tagNumber")
+				removeTagNumber, err := strconv.Atoi(removeTagNoStr)
+				if err != nil {
+					logrus.WithError(err).Warn("error converting tag number from string")
+					w.WriteHeader(http.StatusInternalServerError)
+					pages.Error("Error parsing input").Render(r.Context(), w)
+					return
+				}
+
 				removeIndex := -1
-				for tagIndex, tag := range issueObj.Tags {
-					if tag.GetLabel() == r.PathValue("tagName") {
+				for tagIndex, tagNo := range issueObj.GetTagNumbers() {
+					if tagNo == uint64(removeTagNumber) {
 						removeIndex = tagIndex
 					}
 				}
 				if removeIndex > -1 {
-					issueObj.Tags = slices.Delete(issueObj.Tags, removeIndex, removeIndex+1)
+					issueObj.TagNumbers = slices.Delete(issueObj.TagNumbers, removeIndex, removeIndex+1)
 				}
 
 				modIssue, issueFlows, err := issues.Update(db, uint64(projectNo), issueObj)
@@ -106,9 +132,19 @@ func HandleIssueTag(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 					return
 				}
 
+				tagMap := make(map[uint64]*pb_tag.Tag)
+				tagList, err := tag.GetMany(db, uint64(projectNo), issueObj.TagNumbers)
+				if err != nil {
+					pages.Error("Error loading issues").Render(r.Context(), w)
+					return
+				}
+				for _, tagObj := range tagList {
+					tagMap[tagObj.GetNumber()] = tagObj
+				}
+
 				w.WriteHeader(http.StatusCreated)
 				if r.Header.Get("HX-Request") != "" {
-					shared.IssueRow(uint64(projectNo), modIssue, issueFlows).Render(r.Context(), w)
+					shared.IssueRow(uint64(projectNo), modIssue, issueFlows, tagMap).Render(r.Context(), w)
 				}
 			},
 		)

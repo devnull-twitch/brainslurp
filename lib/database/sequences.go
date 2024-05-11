@@ -13,6 +13,7 @@ const (
 	ProjectSequenceKey byte = 0x3
 	UserSequenceKey    byte = 0x4
 	FlowSequenceKey    byte = 0x5
+	TagSequenceKey     byte = 0x6
 )
 
 var sequenceGenLock = sync.Mutex{}

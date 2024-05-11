@@ -1,0 +1,15 @@
+package shared
+
+templ ListItem(id string, onClickFunc templ.ComponentScript) {
+  <div 
+    class="bg-white even:bg-stone-100 first:rounded-t-lg last:rounded-b-lg"
+    id={ id }
+    if onClickFunc.Name != "" {
+      onclick={ onClickFunc }
+    }
+  >
+    <div class="px-2 py-0.5 flex items-center">
+      { children... }
+    </div>
+  </div>
+}

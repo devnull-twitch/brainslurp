@@ -7,6 +7,8 @@ import (
 	"github.com/devnull-twitch/brainslurp/lib/project"
 	pb_flow "github.com/devnull-twitch/brainslurp/lib/proto/flow"
 	pb_issue "github.com/devnull-twitch/brainslurp/lib/proto/issue"
+	pb_tag "github.com/devnull-twitch/brainslurp/lib/proto/tag"
+	"github.com/devnull-twitch/brainslurp/lib/tag"
 	"github.com/devnull-twitch/brainslurp/lib/user"
 	"github.com/devnull-twitch/brainslurp/lib/view"
 	badger "github.com/dgraph-io/badger/v4"
@@ -51,37 +53,47 @@ func main() {
 		panic(err)
 	}
 
+	testTagNo, err := tag.Create(db, projectNo, &pb_tag.Tag{
+		Title:    "Test",
+		HexColor: "#F000F0",
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	replaceTagNo, err := tag.Create(db, projectNo, &pb_tag.Tag{
+		Title:    "Done",
+		HexColor: "#00FFF0",
+	})
+	if err != nil {
+		panic(err)
+	}
+
 	if err := issues.Create(db, projectNo, &pb_issue.Issue{
-		Title:    "Test no1",
-		Category: pb_issue.IssueCategory_Bug,
-		Tags: []*pb_issue.Tag{
-			{Label: "ToDo", ColorCode: "#FF0000"},
-			{Label: "Unstoppable", ColorCode: "#AAAA00"},
-		},
+		Title:      "Test no1",
+		Category:   pb_issue.IssueCategory_Bug,
+		TagNumbers: []uint64{testTagNo},
 	}); err != nil {
 		panic(err)
 	}
 	if err := issues.Create(db, projectNo, &pb_issue.Issue{
-		Title:    "Test no2",
-		Category: pb_issue.IssueCategory_Feature,
-		Tags: []*pb_issue.Tag{
-			{Label: "ToDo", ColorCode: "#FF0000"},
-		},
+		Title:      "Test no2",
+		Category:   pb_issue.IssueCategory_Feature,
+		TagNumbers: []uint64{testTagNo},
 	}); err != nil {
 		panic(err)
 	}
 	if err := issues.Create(db, projectNo, &pb_issue.Issue{
-		Title:    "Test no3",
-		Category: pb_issue.IssueCategory_Operations,
-		Tags: []*pb_issue.Tag{
-			{Label: "Test", ColorCode: "#880099"},
-		},
+		Title:      "Test no3",
+		Category:   pb_issue.IssueCategory_Feature,
+		TagNumbers: []uint64{},
 	}); err != nil {
 		panic(err)
 	}
 	if err := issues.Create(db, projectNo, &pb_issue.Issue{
-		Title:    "Test no4",
-		Category: pb_issue.IssueCategory_Question,
+		Title:      "Test no4",
+		Category:   pb_issue.IssueCategory_Question,
+		TagNumbers: []uint64{replaceTagNo},
 	}); err != nil {
 		panic(err)
 	}
@@ -91,15 +103,15 @@ func main() {
 		Title:     "Setup Test",
 		Requirements: []*pb_flow.FlowRequirement{
 			{
-				InCategory: pb_issue.IssueCategory_Feature,
-				HasTags:    []*pb_issue.Tag{{Label: "Test"}},
+				InCategory:  pb_issue.IssueCategory_Feature,
+				CheckTagIds: []uint64{testTagNo},
 			},
 		},
 		Actions: []*pb_flow.FlowActions{
 			{
-				Title:      "Tescht",
-				RemoveTags: []*pb_issue.Tag{{Label: "Test"}},
-				AddTags:    []*pb_issue.Tag{{Label: "tested", ColorCode: "#00FF00"}},
+				Title:        "Tescht",
+				RemoveTagIds: []uint64{testTagNo},
+				AddTagIds:    []uint64{replaceTagNo},
 			},
 		},
 	})

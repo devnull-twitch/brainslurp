@@ -19,10 +19,13 @@ func Run(db *badger.DB) error {
 	http.HandleFunc("/project/{projectNo}/issues/new", HandleIssueCreate(db))
 
 	http.HandleFunc("POST /project/{projectNo}/issue/{issueNo}/tags", HandleNewIssueTag(db))
-	http.HandleFunc("DELETE /project/{projectNo}/issue/{issueNo}/tag/{tagName}", HandleIssueTag(db))
+	http.HandleFunc("DELETE /project/{projectNo}/issue/{issueNo}/tag/{tagNumber}", HandleIssueTag(db))
 
 	http.HandleFunc("GET /project/{projectNo}/flows", HandleFlowList(db))
 	http.HandleFunc("/project/{projectNo}/flows/new", HandleFlowCreate(db))
+
+	http.HandleFunc("GET /project/{projectNo}/tags", HandleTagsListing(db))
+	http.HandleFunc("/project/{projectNo}/tags/new", HandleTagCreate(db))
 
 	return http.ListenAndServe(":3000", nil)
 }

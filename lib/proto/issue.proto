@@ -2,11 +2,6 @@ syntax = "proto3";
 package brainslurp;
 option go_package = "github.com/devnull-twitch/brainslurp/lib/proto/issue";
 
-message Tag {
-  string label = 1;
-  string color_code = 2;
-}
-
 message ViewStatus {
   uint64 number = 1;
   int64 set_at = 2;
@@ -31,7 +26,8 @@ message Issue {
   string title = 20;
   string body = 21;
   IssueCategory category = 22;
-  repeated Tag tags = 40;
+  reserved 40;
+  repeated uint64 tag_numbers = 41;
   repeated ViewStatus views = 50;
   repeated FlowStatus flows = 51;
 }

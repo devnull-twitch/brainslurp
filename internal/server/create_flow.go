@@ -57,15 +57,25 @@ func handleNewFlowSubmit(
 	reqs := make([]*pb_flow.FlowRequirement, 0)
 	for reqIndex, tagReq := range r.Form["req_tags"] {
 		rawTags := strings.Split(tagReq, ",")
-		tags := make([]*pb_issue.Tag, len(rawTags))
-		for tagIndex, tagStr := range rawTags {
-			tags[tagIndex] = &pb_issue.Tag{Label: strings.TrimSpace(tagStr)}
+		tags := make([]uint64, 0, len(rawTags))
+		for _, tagStr := range rawTags {
+			tagNo, err := strconv.Atoi(strings.TrimSpace(tagStr))
+			if err != nil {
+				logrus.WithError(err).Warn("error converting number")
+				continue
+			}
+			tags = append(tags, uint64(tagNo))
 		}
 
 		rawNoTags := strings.Split(r.Form["req_no_tags"][reqIndex], ",")
-		noTags := make([]*pb_issue.Tag, len(rawNoTags))
-		for tagIndex, noTagStr := range rawNoTags {
-			noTags[tagIndex] = &pb_issue.Tag{Label: strings.TrimSpace(noTagStr)}
+		noTags := make([]uint64, 0, len(rawNoTags))
+		for _, noTagStr := range rawNoTags {
+			tagNo, err := strconv.Atoi(strings.TrimSpace(noTagStr))
+			if err != nil {
+				logrus.WithError(err).Warn("error converting number")
+				continue
+			}
+			noTags = append(noTags, uint64(tagNo))
 		}
 
 		catID, err := strconv.Atoi(r.Form["req_category"][reqIndex])
@@ -74,30 +84,40 @@ func handleNewFlowSubmit(
 		}
 
 		reqs = append(reqs, &pb_flow.FlowRequirement{
-			HasTags:    tags,
-			NotTags:    noTags,
-			InCategory: pb_issue.IssueCategory(int32(catID)),
+			CheckTagIds:   tags,
+			CheckNoTagIds: noTags,
+			InCategory:    pb_issue.IssueCategory(int32(catID)),
 		})
 	}
 
 	actions := make([]*pb_flow.FlowActions, 0)
 	for actionIndex, actionName := range r.Form["action_name"] {
 		rawTagAdds := strings.Split(r.Form["action_adds"][actionIndex], ",")
-		addTags := make([]*pb_issue.Tag, len(rawTagAdds))
-		for tagIndex, addTagStr := range rawTagAdds {
-			addTags[tagIndex] = &pb_issue.Tag{Label: strings.TrimSpace(addTagStr)}
+		addTags := make([]uint64, 0, len(rawTagAdds))
+		for _, addTagStr := range rawTagAdds {
+			tagNo, err := strconv.Atoi(strings.TrimSpace(addTagStr))
+			if err != nil {
+				logrus.WithError(err).Warn("error converting number")
+				continue
+			}
+			addTags = append(addTags, uint64(tagNo))
 		}
 
 		rawTagRemoval := strings.Split(r.Form["action_removes"][actionIndex], ",")
-		removeTags := make([]*pb_issue.Tag, len(rawTagRemoval))
-		for tagIndex, removeTagStr := range rawTagRemoval {
-			removeTags[tagIndex] = &pb_issue.Tag{Label: strings.TrimSpace(removeTagStr)}
+		removeTags := make([]uint64, 0, len(rawTagRemoval))
+		for _, removeTagStr := range rawTagRemoval {
+			tagNo, err := strconv.Atoi(strings.TrimSpace(removeTagStr))
+			if err != nil {
+				logrus.WithError(err).Warn("error converting number")
+				continue
+			}
+			removeTags = append(removeTags, uint64(tagNo))
 		}
 
 		actions = append(actions, &pb_flow.FlowActions{
-			Title:      actionName,
-			AddTags:    addTags,
-			RemoveTags: removeTags,
+			Title:        actionName,
+			AddTagIds:    addTags,
+			RemoveTagIds: removeTags,
 		})
 	}
 

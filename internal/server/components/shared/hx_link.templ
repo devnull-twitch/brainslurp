@@ -16,7 +16,9 @@ func makeLinkButtonCSS(inRow bool) string {
     "bg-gradient-to-b", "from-cyan-500", "to-indigo-500", "hover:from-cyan-600", "hover:to-indigo-900",
   }
   if inRow {
-    classes = append(classes, "first:rounded-l-lg", "last:rounded-r-lg")
+    // use first-of-type instead of first because if the first button has an onClick handler there might be
+    // a script node as first element in there.
+    classes = append(classes, "first-of-type:rounded-l-lg", "last:rounded-r-lg")
   } else {
     classes = append(classes, "rounded-lg")
   }

@@ -15,6 +15,8 @@ const (
 	UsernameLookupPrefix byte = 0x6
 	// Flows describe actions that change category or tags on an issue
 	FlowPrefix byte = 0x7
+	// Tag is just a name with a color
+	TagPrefix byte = 0x8
 	// Sequence are the prefix for 2 byte
 	SequencePrefix byte = 0xFA
 )

@@ -49,26 +49,24 @@ func makeflowRowID(no uint64) string {
 }
 
 templ FlowListItem(flowObj *pb_flow.Flow) {
-  <div class="mb-8" id={ makeflowRowID(flowObj.GetNumber()) }>
-    <div class="px-2 shadow-lg bg-white flex items-center">
-      <span class="flex-1">{ flowObj.GetTitle() }</span>
+  @shared.ListItem(makeflowRowID(flowObj.GetNumber()), templ.ComponentScript{}) {
+    <span class="flex-1">{ flowObj.GetTitle() }</span>
 
-      <div class="flex flex-none pr-4 py-2">
-        @shared.HxLink("#", "#" + makeflowRowID(flowObj.GetNumber()), shared.HxLinkOptions{
-          UseButtonStyle: true,
-          InButtonRow: true,
-        }) {
-          @shared.Codicon("edit", true)
-          Edit
-        }
-        @shared.HxLink("#", "#" + makeflowRowID(flowObj.GetNumber()), shared.HxLinkOptions{
-          UseButtonStyle: true,
-          InButtonRow: true,
-        }) {
-          @shared.Codicon("trash", true)
-          Delete
-        }
-      </div>
+    <div class="flex flex-none pr-4 py-2">
+      @shared.HxLink("#", "#" + makeflowRowID(flowObj.GetNumber()), shared.HxLinkOptions{
+        UseButtonStyle: true,
+        InButtonRow: true,
+      }) {
+        @shared.Codicon("edit", true)
+        Edit
+      }
+      @shared.HxLink("#", "#" + makeflowRowID(flowObj.GetNumber()), shared.HxLinkOptions{
+        UseButtonStyle: true,
+        InButtonRow: true,
+      }) {
+        @shared.Codicon("trash", true)
+        Delete
+      }
     </div>
-  </div>
+  }
 }

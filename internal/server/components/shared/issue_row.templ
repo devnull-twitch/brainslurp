@@ -7,6 +7,7 @@ import "github.com/sirupsen/logrus"
 import "github.com/yuin/goldmark"
 import pb_issue "github.com/devnull-twitch/brainslurp/lib/proto/issue"
 import pb_flow "github.com/devnull-twitch/brainslurp/lib/proto/flow"
+import pb_tag "github.com/devnull-twitch/brainslurp/lib/proto/tag"
 
 func makeIssueRowID(no uint64) string {
   return fmt.Sprintf("issue-no-%d", no)
@@ -43,8 +44,8 @@ func makeNewTagURL(projectNo uint64, issueNo uint64) templ.SafeURL {
   return templ.URL(fmt.Sprintf("/project/%d/issue/%d/tags", projectNo, issueNo))
 }
 
-func makeRemoveTagURL(projectNo uint64, issueNo uint64, tag string) templ.SafeURL {
-  return templ.URL(fmt.Sprintf("/project/%d/issue/%d/tag/%s", projectNo, issueNo, tag))
+func makeRemoveTagURL(projectNo uint64, issueNo uint64, issueTagNo uint64) templ.SafeURL {
+  return templ.URL(fmt.Sprintf("/project/%d/issue/%d/tag/%d", projectNo, issueNo, issueTagNo))
 }
 
 func renderIssueBody(bodyStr string) string {
@@ -75,9 +76,14 @@ script onShowDetails(containerId string) {
   }
 }
 
-templ IssueRow(projectNo uint64, issue *pb_issue.Issue, issueFlows []*pb_flow.Flow) {
-  <div class="mb-8" id={ makeIssueRowID(issue.GetNumber()) }>
-    <div class="px-2 shadow-lg bg-white flex items-center" onclick={ onContainerClick(makeIssueRowID(issue.GetNumber())) }>
+templ IssueRow(
+  projectNo uint64,
+  issue *pb_issue.Issue,
+  issueFlows []*pb_flow.Flow,
+  tagMap map[uint64]*pb_tag.Tag,
+) {
+  <div class="bg-white even:bg-stone-100 first:rounded-t-lg last:rounded-b-lg" id={ makeIssueRowID(issue.GetNumber()) }>
+    <div class="px-2 py-0.5 flex items-center" onclick={ onContainerClick(makeIssueRowID(issue.GetNumber())) }>
       <!-- Select CB -->
       <div class="flex-initial">
         <input type="checkbox" name="issue-no" value={ fmt.Sprintf("%d", issue.GetNumber()) } />
@@ -104,13 +110,13 @@ templ IssueRow(projectNo uint64, issue *pb_issue.Issue, issueFlows []*pb_flow.Fl
 
       <!-- TAGS -->
       <div class="flex flex-initial mr-8">
-        for _, issueTag := range issue.Tags {
+        for _, issueTagNo := range issue.GetTagNumbers() {
           <div 
-            class={ tagStyle(issueTag.GetColorCode()), "px-2 my-1 rounded-lg items-center mr-1" }
+            class={ tagStyle(tagMap[issueTagNo].GetHexColor()), "px-2 my-1 rounded-lg items-center mr-1" }
             onclick="event.stopPropagation();"
           >
-            <span>{ issueTag.GetLabel() }</span>
-            @HxLink(makeRemoveTagURL(projectNo, issue.GetNumber(), issueTag.GetLabel()), "#" + makeIssueRowID(issue.GetNumber()), HxLinkOptions{
+            <span>{ tagMap[issueTagNo].GetTitle() }</span>
+            @HxLink(makeRemoveTagURL(projectNo, issue.GetNumber(), issueTagNo), "#" + makeIssueRowID(issue.GetNumber()), HxLinkOptions{
               Method: "delete",
               Swap: "outerHTML",
             }) {
@@ -153,8 +159,13 @@ templ IssueRow(projectNo uint64, issue *pb_issue.Issue, issueFlows []*pb_flow.Fl
           class="w-1/3 flex-initial pb-2"
         >
           <h4 class="text-lg pb-1 italic">Add Tag</h4>
-          @FormField("title", "Tag", "text", FormFieldOptions{})
-          @FormField("color", "Hex color code", "color", FormFieldOptions{})
+          @FormDropdownField("tag_id", "Tag", FormFieldOptions{}) {
+            for _, tagObj := range tagMap {
+              <option value={ fmt.Sprintf("%d", tagObj.GetNumber()) }>
+                { tagObj.GetTitle() }
+              </option>
+            }
+          }
           @FormButton(ButtonOptions{}) {
             Add
           }

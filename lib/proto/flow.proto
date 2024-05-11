@@ -6,14 +6,16 @@ import "lib/proto/issue.proto";
 
 message FlowRequirement {
   IssueCategory in_category = 10;
-  repeated Tag has_tags = 20;
-  repeated Tag not_tags = 2;
+  reserved 20, 2;
+  repeated uint64 check_tag_ids = 22;
+  repeated uint64 check_no_tag_ids = 23;
 }
 
 message FlowActions {
   string title = 1;
-  repeated Tag add_tags = 20;
-  repeated Tag remove_tags = 21;
+  reserved 20, 21;
+  repeated uint64 add_tag_ids = 22;
+  repeated uint64 remove_tag_ids = 23;
 }
 
 message Flow {

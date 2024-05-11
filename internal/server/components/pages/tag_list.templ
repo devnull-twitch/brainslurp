@@ -1,0 +1,72 @@
+package pages
+
+import pb_tag "github.com/devnull-twitch/brainslurp/lib/proto/tag"
+import "github.com/devnull-twitch/brainslurp/internal/server/components/shared"
+import "fmt"
+
+templ TagListing(projectNo uint64, tags []*pb_tag.Tag) {
+  <html>
+		@header("Project tags")
+		@TagListingBody(projectNo, tags)
+  </html>
+}
+
+func makeTagCreatePageURL(projectNo uint64) templ.SafeURL {
+  return templ.URL(fmt.Sprintf("/project/%d/tags/new", projectNo))
+}
+
+templ TagListingBody(projectNo uint64, tags []*pb_tag.Tag) {
+  @body(projectNo) {
+    <div class="container mx-auto">
+      <div class="flex justify-between items-start">
+			  <h2 class="text-2xl underline pb-4">Tags</h2>
+        @shared.HxLink(makeTagCreatePageURL(projectNo), "body", shared.HxLinkOptions{
+          UseButtonStyle: true,
+          PushURL: true,
+        }) {
+          @shared.Codicon("add", true)
+          New
+        }
+      </div>
+      <div id="tag-list">
+				@TagListItems(tags)
+			</div>
+    </div>
+  }
+}
+
+templ TagListItems(tags []*pb_tag.Tag) {
+  <div class="flex flex-col">
+	for _, tagObj := range tags {
+		@TagListItem(tagObj)
+	}
+	</div>
+}
+
+func makeTagRowID(number uint64) string {
+  return fmt.Sprintf("tag-%d", number)
+}
+
+templ TagListItem(tagObj *pb_tag.Tag) {
+  @shared.ListItem(makeTagRowID(tagObj.GetNumber()), templ.ComponentScript{}) {
+    <span class="flex-1">{ tagObj.GetTitle() }</span>
+    <span class="flex-1">{ tagObj.GetHexColor() }</span>
+
+    <div class="flex flex-none pr-4 py-2">
+      @shared.HxLink("#", "#" + makeTagRowID(tagObj.GetNumber()), shared.HxLinkOptions{
+        UseButtonStyle: true,
+        InButtonRow: true,
+      }) {
+        @shared.Codicon("edit", true)
+        Edit
+      }
+      @shared.HxLink("#", "#" + makeTagRowID(tagObj.GetNumber()), shared.HxLinkOptions{
+        UseButtonStyle: true,
+        InButtonRow: true,
+      }) {
+        @shared.Codicon("trash", true)
+        Delete
+      }
+    </div>
+  }
+}

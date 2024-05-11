@@ -10,6 +10,8 @@ import (
 	"github.com/devnull-twitch/brainslurp/lib/project"
 	pb_flow "github.com/devnull-twitch/brainslurp/lib/proto/flow"
 	pb_issue "github.com/devnull-twitch/brainslurp/lib/proto/issue"
+	pb_tag "github.com/devnull-twitch/brainslurp/lib/proto/tag"
+	"github.com/devnull-twitch/brainslurp/lib/tag"
 	"github.com/devnull-twitch/brainslurp/lib/user"
 	"github.com/devnull-twitch/brainslurp/lib/view"
 	"github.com/dgraph-io/badger/v4"
@@ -69,11 +71,11 @@ func HandleIssueList(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 			}
 		}
 
-		var issueListe []*pb_issue.Issue
+		var issueList []*pb_issue.Issue
 		var mapFlowsToIssues map[uint64][]*pb_flow.Flow
 		if r.PathValue("viewNo") == "" {
 			var err error
-			issueListe, mapFlowsToIssues, err = issues.ListAll(db, uint64(projectNo))
+			issueList, mapFlowsToIssues, err = issues.ListAll(db, uint64(projectNo))
 			if err != nil {
 				pages.Error("Error loading issues").Render(r.Context(), w)
 				return
@@ -89,7 +91,7 @@ func HandleIssueList(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 				return
 			}
 
-			issueListe, mapFlowsToIssues, err = issues.ListFromView(db, uint64(projectNo), uint64(viewNo))
+			issueList, mapFlowsToIssues, err = issues.ListFromView(db, uint64(projectNo), uint64(viewNo))
 			if err != nil {
 				logrus.WithError(err).Error("error loading issues")
 				pages.Error("Error loading issues").Render(r.Context(), w)
@@ -103,14 +105,24 @@ func HandleIssueList(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
+		tagMap := make(map[uint64]*pb_tag.Tag)
+		tagList, err := tag.List(db, uint64(projectNo))
+		if err != nil {
+			pages.Error("Error loading issues").Render(r.Context(), w)
+			return
+		}
+		for _, tagObj := range tagList {
+			tagMap[tagObj.GetNumber()] = tagObj
+		}
+
 		if r.Header.Get("HX-Request") != "" || w.Header().Get("HX-Retarget") != "" {
 			if r.Header.Get("HX-Target") == "issue-list" {
-				pages.ListItems(uint64(projectNo), issueListe, mapFlowsToIssues).Render(r.Context(), w)
+				pages.ListItems(uint64(projectNo), issueList, mapFlowsToIssues, tagMap).Render(r.Context(), w)
 			} else {
-				pages.ListBody(uint64(projectNo), issueListe, mapFlowsToIssues, viewList).Render(r.Context(), w)
+				pages.ListBody(uint64(projectNo), issueList, mapFlowsToIssues, viewList, tagMap).Render(r.Context(), w)
 			}
 		} else {
-			pages.List(uint64(projectNo), issueListe, mapFlowsToIssues, viewList).Render(r.Context(), w)
+			pages.List(uint64(projectNo), issueList, mapFlowsToIssues, viewList, tagMap).Render(r.Context(), w)
 		}
 	}
 }

@@ -92,18 +92,18 @@ func removeFlow(issueObj *pb_issue.Issue, flowNo uint64) []*pb_issue.FlowStatus 
 func doesIssueMatchRequirement(issueObj *pb_issue.Issue, requirements []*pb_flow.FlowRequirement) bool {
 	for _, req := range requirements {
 		// make sure issue has all tags
-		if len(req.GetHasTags()) > 0 {
-			for _, tagReq := range req.GetHasTags() {
-				if !hasTag(issueObj, tagReq) {
+		if len(req.GetCheckTagIds()) > 0 {
+			for _, tagId := range req.GetCheckTagIds() {
+				if !hasTag(issueObj, tagId) {
 					return false
 				}
 			}
 		}
 
 		// make sure tags does not have tags it should not have
-		if len(req.GetNotTags()) > 0 {
-			for _, noTagReq := range req.GetNotTags() {
-				if hasTag(issueObj, noTagReq) {
+		if len(req.GetCheckNoTagIds()) > 0 {
+			for _, noTagId := range req.GetCheckNoTagIds() {
+				if hasTag(issueObj, noTagId) {
 					return false
 				}
 			}
@@ -119,9 +119,9 @@ func doesIssueMatchRequirement(issueObj *pb_issue.Issue, requirements []*pb_flow
 	return true
 }
 
-func hasTag(issueObj *pb_issue.Issue, tag *pb_issue.Tag) bool {
-	for _, issueTag := range issueObj.GetTags() {
-		if issueTag.Label == tag.Label {
+func hasTag(issueObj *pb_issue.Issue, tagNo uint64) bool {
+	for _, issueTagNumber := range issueObj.GetTagNumbers() {
+		if issueTagNumber == tagNo {
 			return true
 		}
 	}

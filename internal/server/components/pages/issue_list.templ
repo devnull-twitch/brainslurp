@@ -5,6 +5,7 @@ import "github.com/devnull-twitch/brainslurp/internal/server/components/shared"
 import pb_issue "github.com/devnull-twitch/brainslurp/lib/proto/issue"
 import pb_flow "github.com/devnull-twitch/brainslurp/lib/proto/flow"
 import pb_view "github.com/devnull-twitch/brainslurp/lib/proto/view"
+import pb_tag "github.com/devnull-twitch/brainslurp/lib/proto/tag"
 
 func makeIssuesFilterPath(projectNo uint64, viewNo uint64) templ.SafeURL {
 	return templ.URL(fmt.Sprintf("/project/%d/issues/view/%d", projectNo, viewNo))
@@ -18,14 +19,26 @@ func makeNewIssuePath(projectNo uint64) templ.SafeURL {
 	return templ.URL(fmt.Sprintf("/project/%d/issues/new", projectNo))
 }
 
-templ List(projectNo uint64, issues []*pb_issue.Issue, mapFlowToIssue map[uint64][]*pb_flow.Flow, views []*pb_view.View) {
+templ List(
+	projectNo uint64,
+	issues []*pb_issue.Issue,
+	mapFlowToIssue map[uint64][]*pb_flow.Flow,
+	views []*pb_view.View,
+	tagMap map[uint64]*pb_tag.Tag,
+) {
 	<html>
 		@header("Issue list")
-		@ListBody(projectNo, issues, mapFlowToIssue, views)
+		@ListBody(projectNo, issues, mapFlowToIssue, views, tagMap)
 	</html>
 }
 
-templ ListBody(projectNo uint64, issues []*pb_issue.Issue, mapFlowToIssue map[uint64][]*pb_flow.Flow, views []*pb_view.View) {
+templ ListBody(
+	projectNo uint64,
+	issues []*pb_issue.Issue,
+	mapFlowToIssue map[uint64][]*pb_flow.Flow,
+	views []*pb_view.View,
+	tagMap map[uint64]*pb_tag.Tag,
+) {
 	@body(projectNo) {
 		<div class="container mx-auto">
 			<h2 class="text-2xl underline pb-4">Issues</h2>
@@ -65,16 +78,21 @@ templ ListBody(projectNo uint64, issues []*pb_issue.Issue, mapFlowToIssue map[ui
 				</div>
 			</div>
 			<div id="issue-list">
-				@ListItems(projectNo, issues, mapFlowToIssue)
+				@ListItems(projectNo, issues, mapFlowToIssue, tagMap)
 			</div>
 		</div>
 	}
 }
 
-templ ListItems(projectNo uint64, issues []*pb_issue.Issue, mapFlowToIssue map[uint64][]*pb_flow.Flow) {
+templ ListItems(
+	projectNo uint64,
+	issues []*pb_issue.Issue,
+	mapFlowToIssue map[uint64][]*pb_flow.Flow,
+	tagMap map[uint64]*pb_tag.Tag,
+) {
 	<div class="flex flex-col">
 	for _, issue := range issues {
-		@shared.IssueRow(projectNo, issue, mapFlowToIssue[issue.GetNumber()])
+		@shared.IssueRow(projectNo, issue, mapFlowToIssue[issue.GetNumber()], tagMap)
 	}
 	</div>
 }

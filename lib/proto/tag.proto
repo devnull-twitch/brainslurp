@@ -1,0 +1,9 @@
+syntax = "proto3";
+package brainslurp;
+option go_package = "github.com/devnull-twitch/brainslurp/lib/proto/tag";
+
+message Tag {
+  uint64 number = 1;
+  string title = 2;
+  string hex_color = 3;
+}
