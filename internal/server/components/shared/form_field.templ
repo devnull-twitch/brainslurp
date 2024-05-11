@@ -4,6 +4,7 @@ type FormFieldOptions struct {
   Small bool
   ExtraSpacey bool
   Placeholder string
+  Required bool
 }
 
 templ FormField(name string, label string, fieldType string, opts FormFieldOptions) {
@@ -32,19 +33,41 @@ templ FormInput(name string, fieldType string, placeholder string) {
 
 templ FormDropdownField(name string, label string, opts FormFieldOptions) {
   if opts.Small {
-    @FormDropdown(name)
+    @FormDropdown(name, opts.Required)
   } else {
     <div class={ "flex flex-col", templ.KV("mb-8", opts.ExtraSpacey), templ.KV("mb-4", !opts.ExtraSpacey) }>
       <label for={ name } classs="mb-1">{ label }:</label>
-      @FormDropdown(name) {
+      @FormDropdown(name, opts.Required) {
         { children... }
       }
     </div>
   }
 }
 
-templ FormDropdown(name string) {
-  <select class="p-2 rounded border border-slate-700" name={ name } id={ name }>
+templ FormDropdown(name string, req bool) {
+  <select 
+    class="p-2 rounded border border-slate-700"
+    name={ name }
+    id={ name }
+    if req {
+      required="true"
+    }
+  >
     { children... }
   </select>
+}
+
+templ FormTextareaField(name string, label string, opts FormFieldOptions) {
+  if opts.Small {
+    @FormTextarea(name)
+  } else {
+    <div class={ "flex flex-col", templ.KV("mb-8", opts.ExtraSpacey), templ.KV("mb-4", !opts.ExtraSpacey) }>
+      <label for={ name } classs="mb-1">{ label }:</label>
+      @FormTextarea(name)
+    </div>
+  }
+}
+
+templ FormTextarea(name string) {
+  <textarea name={ name } id={ name } class="w-full p-2 min-h-16 rounded border border-slate-700"></textarea>
 }

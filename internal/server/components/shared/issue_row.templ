@@ -4,6 +4,7 @@ import "fmt"
 
 import "github.com/crazy3lf/colorconv"
 import "github.com/sirupsen/logrus"
+import "github.com/yuin/goldmark"
 import pb_issue "github.com/devnull-twitch/brainslurp/lib/proto/issue"
 import pb_flow "github.com/devnull-twitch/brainslurp/lib/proto/flow"
 
@@ -44,6 +45,16 @@ func makeNewTagURL(projectNo uint64, issueNo uint64) templ.SafeURL {
 
 func makeRemoveTagURL(projectNo uint64, issueNo uint64, tag string) templ.SafeURL {
   return templ.URL(fmt.Sprintf("/project/%d/issue/%d/tag/%s", projectNo, issueNo, tag))
+}
+
+func renderIssueBody(bodyStr string) string {
+  out := &strings.Builder{}
+  if err := goldmark.Convert([]byte(bodyStr), out); err != nil {
+    logrus.WithError(err).Error("markdown render error")
+    return ""
+  }
+
+  return out.String()
 }
 
 script onContainerClick(containerId string) {
@@ -127,6 +138,11 @@ templ IssueRow(projectNo uint64, issue *pb_issue.Issue, issueFlows []*pb_flow.Fl
 
     <!-- Issue Details box -->
     <div class="hidden bg-white brainslurp-detail" id={ makeIssueDetailsID(issue.GetNumber()) }>
+      if issue.GetBody() != "" {
+        <div class="mb-2">
+          @templ.Raw(renderIssueBody(issue.GetBody()))
+        </div>
+      }
       <div class="flex justify-around">
         
         <!-- Tag Form -->

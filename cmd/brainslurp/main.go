@@ -43,7 +43,7 @@ func main() {
 		panic(err)
 	}
 
-	viewNo, err := view.Create(db, view.CreateOptions{
+	_, err = view.Create(db, view.CreateOptions{
 		Title:     "Test List",
 		ProjectNo: projectNo,
 	})
@@ -51,11 +51,9 @@ func main() {
 		panic(err)
 	}
 
-	if err := issues.Create(db, issues.CreateOptions{
-		ProjectNo:  projectNo,
-		Title:      "Test no1",
-		ViewStatus: []uint64{viewNo},
-		Category:   pb_issue.IssueCategory_Bug,
+	if err := issues.Create(db, projectNo, &pb_issue.Issue{
+		Title:    "Test no1",
+		Category: pb_issue.IssueCategory_Bug,
 		Tags: []*pb_issue.Tag{
 			{Label: "ToDo", ColorCode: "#FF0000"},
 			{Label: "Unstoppable", ColorCode: "#AAAA00"},
@@ -63,33 +61,27 @@ func main() {
 	}); err != nil {
 		panic(err)
 	}
-	if err := issues.Create(db, issues.CreateOptions{
-		ProjectNo:  projectNo,
-		Title:      "Test no2",
-		ViewStatus: []uint64{},
-		Category:   pb_issue.IssueCategory_Feature,
+	if err := issues.Create(db, projectNo, &pb_issue.Issue{
+		Title:    "Test no2",
+		Category: pb_issue.IssueCategory_Feature,
 		Tags: []*pb_issue.Tag{
 			{Label: "ToDo", ColorCode: "#FF0000"},
 		},
 	}); err != nil {
 		panic(err)
 	}
-	if err := issues.Create(db, issues.CreateOptions{
-		ProjectNo:  projectNo,
-		Title:      "Test no3",
-		ViewStatus: []uint64{viewNo},
-		Category:   pb_issue.IssueCategory_Operations,
+	if err := issues.Create(db, projectNo, &pb_issue.Issue{
+		Title:    "Test no3",
+		Category: pb_issue.IssueCategory_Operations,
 		Tags: []*pb_issue.Tag{
 			{Label: "Test", ColorCode: "#880099"},
 		},
 	}); err != nil {
 		panic(err)
 	}
-	if err := issues.Create(db, issues.CreateOptions{
-		ProjectNo:  projectNo,
-		Title:      "Test no4",
-		ViewStatus: []uint64{},
-		Category:   pb_issue.IssueCategory_Question,
+	if err := issues.Create(db, projectNo, &pb_issue.Issue{
+		Title:    "Test no4",
+		Category: pb_issue.IssueCategory_Question,
 	}); err != nil {
 		panic(err)
 	}

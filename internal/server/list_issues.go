@@ -103,7 +103,7 @@ func HandleIssueList(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		if r.Header.Get("HX-Request") != "" {
+		if r.Header.Get("HX-Request") != "" || w.Header().Get("HX-Retarget") != "" {
 			if r.Header.Get("HX-Target") == "issue-list" {
 				pages.ListItems(uint64(projectNo), issueListe, mapFlowsToIssues).Render(r.Context(), w)
 			} else {

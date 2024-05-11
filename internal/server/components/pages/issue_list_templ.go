@@ -21,7 +21,11 @@ func makeIssuesFilterPath(projectNo uint64, viewNo uint64) templ.SafeURL {
 }
 
 func makeIssuesUnfilteredPath(projectNo uint64) templ.SafeURL {
-	return templ.URL(fmt.Sprintf("/project/%d", projectNo))
+	return templ.URL(fmt.Sprintf("/project/%d/issues", projectNo))
+}
+
+func makeNewIssuePath(projectNo uint64) templ.SafeURL {
+	return templ.URL(fmt.Sprintf("/project/%d/issues/new", projectNo))
 }
 
 func List(projectNo uint64, issues []*pb_issue.Issue, mapFlowToIssue map[uint64][]*pb_flow.Flow, views []*pb_view.View) templ.Component {
@@ -79,7 +83,7 @@ func ListBody(projectNo uint64, issues []*pb_issue.Issue, mapFlowToIssue map[uin
 				templ_7745c5c3_Buffer = templ.GetBuffer()
 				defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"container mx-auto\"><h2 class=\"text-2xl underline pb-4\">Issues</h2><div class=\"flex pb-4\">")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"container mx-auto\"><h2 class=\"text-2xl underline pb-4\">Issues</h2><div class=\"flex justify-between pb-4\"><div class=\"flex\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -116,7 +120,7 @@ func ListBody(projectNo uint64, issues []*pb_issue.Issue, mapFlowToIssue map[uin
 					var templ_7745c5c3_Var6 string
 					templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(view.Title)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/issue_list.templ`, Line: 42, Col: 18}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/issue_list.templ`, Line: 47, Col: 19}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 					if templ_7745c5c3_Err != nil {
@@ -154,11 +158,38 @@ func ListBody(projectNo uint64, issues []*pb_issue.Issue, mapFlowToIssue map[uin
 			templ_7745c5c3_Err = shared.HxLink(templ.URL("/views/new"), "body", shared.HxLinkOptions{
 				UseButtonStyle: true,
 				InButtonRow:    true,
+				PushURL:        true,
 			}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var7), templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div><div id=\"issue-list\">")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div><div class=\"flex\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Var8 := templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
+				templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
+				if !templ_7745c5c3_IsBuffer {
+					templ_7745c5c3_Buffer = templ.GetBuffer()
+					defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("+ New issue")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				if !templ_7745c5c3_IsBuffer {
+					_, templ_7745c5c3_Err = io.Copy(templ_7745c5c3_W, templ_7745c5c3_Buffer)
+				}
+				return templ_7745c5c3_Err
+			})
+			templ_7745c5c3_Err = shared.HxLink(makeNewIssuePath(projectNo), "body", shared.HxLinkOptions{
+				UseButtonStyle: true,
+				PushURL:        true,
+			}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var8), templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div></div><div id=\"issue-list\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -194,9 +225,9 @@ func ListItems(projectNo uint64, issues []*pb_issue.Issue, mapFlowToIssue map[ui
 			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var8 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var8 == nil {
-			templ_7745c5c3_Var8 = templ.NopComponent
+		templ_7745c5c3_Var9 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var9 == nil {
+			templ_7745c5c3_Var9 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"flex flex-col\">")

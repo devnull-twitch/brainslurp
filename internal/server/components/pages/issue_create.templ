@@ -1,0 +1,41 @@
+package pages
+
+import "github.com/devnull-twitch/brainslurp/internal/server/components/shared"
+import "fmt"
+
+templ IssueCreate(projectNo uint64) {
+  <html>
+		@header("Create new issue")
+		@IssueCreateBody(projectNo)
+	</html>
+}
+
+func makeIssueCreateSaveForm(projectNo uint64) templ.SafeURL {
+  return templ.URL(fmt.Sprintf("/project/%d/issues/new", projectNo))
+}
+
+templ IssueCreateBody(projectNo uint64) {
+  @body(projectNo) {
+    <div class="container mx-auto">
+			<h2 class="text-2xl underline pb-4">Create new issue</h2>
+      <div class="w-1/3">
+        <form method="POST" hx-post={ string(makeIssueCreateSaveForm(projectNo)) } hx-target="body">
+          @shared.FormField("title", "Title", "text", shared.FormFieldOptions{Placeholder: "New issue"})
+          @shared.FormDropdownField("category", "Categorry", shared.FormFieldOptions{}) {
+            <option value="">Please select</option>
+            <option value="1">Bug</option>
+            <option value="2">Feature</option>
+            <option value="3">Operations</option>
+            <option value="4">Question</option>
+          }
+          @shared.FormTextareaField("body", "Description", shared.FormFieldOptions{})
+          <div class="flex justify-center">
+            @shared.FormButton(shared.ButtonOptions{}) {
+              Create
+            }
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+}

@@ -11,7 +11,11 @@ func makeIssuesFilterPath(projectNo uint64, viewNo uint64) templ.SafeURL {
 }
 
 func makeIssuesUnfilteredPath(projectNo uint64) templ.SafeURL {
-	return templ.URL(fmt.Sprintf("/project/%d", projectNo))
+	return templ.URL(fmt.Sprintf("/project/%d/issues", projectNo))
+}
+
+func makeNewIssuePath(projectNo uint64) templ.SafeURL {
+	return templ.URL(fmt.Sprintf("/project/%d/issues/new", projectNo))
 }
 
 templ List(projectNo uint64, issues []*pb_issue.Issue, mapFlowToIssue map[uint64][]*pb_flow.Flow, views []*pb_view.View) {
@@ -25,29 +29,40 @@ templ ListBody(projectNo uint64, issues []*pb_issue.Issue, mapFlowToIssue map[ui
 	@body(projectNo) {
 		<div class="container mx-auto">
 			<h2 class="text-2xl underline pb-4">Issues</h2>
-			<div class="flex pb-4">
-				@shared.HxLink(makeIssuesUnfilteredPath(projectNo), "#issue-list", shared.HxLinkOptions{
-					UseButtonStyle: true,
-					InButtonRow: true,
-					PushURL: true,
-				}) {
-					All
-				}
-				for _, view := range views {
-					@shared.HxLink(makeIssuesFilterPath(projectNo, view.GetNumber()), "#issue-list", shared.HxLinkOptions{
+			<div class="flex justify-between pb-4">
+				<div class="flex">
+					@shared.HxLink(makeIssuesUnfilteredPath(projectNo), "#issue-list", shared.HxLinkOptions{
 						UseButtonStyle: true,
 						InButtonRow: true,
 						PushURL: true,
 					}) {
-						{ view.Title }
+						All
 					}
-				}
-				@shared.HxLink(templ.URL("/views/new"), "body", shared.HxLinkOptions{
-					UseButtonStyle: true,
-					InButtonRow: true,
-				}) {
-					+ New view
-				}
+					for _, view := range views {
+						@shared.HxLink(makeIssuesFilterPath(projectNo, view.GetNumber()), "#issue-list", shared.HxLinkOptions{
+							UseButtonStyle: true,
+							InButtonRow: true,
+							PushURL: true,
+						}) {
+							{ view.Title }
+						}
+					}
+					@shared.HxLink(templ.URL("/views/new"), "body", shared.HxLinkOptions{
+						UseButtonStyle: true,
+						InButtonRow: true,
+						PushURL: true,
+					}) {
+						+ New view
+					}
+				</div>
+				<div class="flex">
+					@shared.HxLink(makeNewIssuePath(projectNo), "body", shared.HxLinkOptions{
+						UseButtonStyle: true,
+						PushURL: true,
+					}) {
+						+ New issue
+					}
+				</div>
 			</div>
 			<div id="issue-list">
 				@ListItems(projectNo, issues, mapFlowToIssue)

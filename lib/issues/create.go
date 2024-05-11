@@ -12,55 +12,27 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-type CreateOptions struct {
-	Title      string
-	Body       string
-	Category   pb_issue.IssueCategory
-	ViewStatus []uint64
-	ProjectNo  uint64
-	Tags       []*pb_issue.Tag
-}
-
-func Create(db *badger.DB, opts CreateOptions) error {
+func Create(db *badger.DB, projectNo uint64, newIssue *pb_issue.Issue) error {
 	issueNo, err := database.NextNumber(db, database.IssueSequenceKey)
 	if err != nil {
 		return fmt.Errorf("error getting new issue number: %w", err)
 	}
 
-	if opts.ProjectNo <= 0 {
+	if projectNo <= 0 {
 		return fmt.Errorf("no project number")
 	}
 
 	issueKeyLength := (2 * binary.MaxVarintLen64) + 1
 	issueKey := make([]byte, issueKeyLength)
 	issueKey[0] = database.IssuePrefix
-	binary.PutUvarint(issueKey[1:], opts.ProjectNo)
+	binary.PutUvarint(issueKey[1:], projectNo)
 	binary.PutUvarint(issueKey[binary.MaxVarintLen64+1:], issueNo)
 
-	unixNow := time.Now().Unix()
+	newIssue.Number = issueNo
+	newIssue.CreatedAt = time.Now().Unix()
+	newIssue.Views = make([]*pb_issue.ViewStatus, 0)
 
-	viewStatus := make([]*pb_issue.ViewStatus, len(opts.ViewStatus))
-	viewIssueListKeys := make([][]byte, 0)
-	for i, vsID := range opts.ViewStatus {
-		viewStatus[i] = &pb_issue.ViewStatus{Number: vsID, SetAt: unixNow}
-
-		viewIssueKey := make([]byte, issueKeyLength)
-		viewIssueKey[0] = database.ViewIssuesPrefix
-		binary.PutUvarint(viewIssueKey[1:], opts.ProjectNo)
-		binary.PutUvarint(viewIssueKey[binary.MaxVarintLen64+1:], vsID)
-
-		viewIssueListKeys = append(viewIssueListKeys, viewIssueKey)
-	}
-
-	issueVal, err := proto.Marshal(&pb_issue.Issue{
-		Number:    issueNo,
-		CreatedAt: unixNow,
-		Title:     opts.Title,
-		Body:      opts.Body,
-		Category:  opts.Category,
-		Views:     viewStatus,
-		Tags:      opts.Tags,
-	})
+	issueVal, err := proto.Marshal(newIssue)
 	if err != nil {
 		return fmt.Errorf("unable to marshal issue: %w", err)
 	}
@@ -73,6 +45,7 @@ func Create(db *badger.DB, opts CreateOptions) error {
 
 	logrus.WithField("key", fmt.Sprintf("%x", issueKey)).Info("issue inserted")
 
+	viewIssueListKeys := make([][]byte, 0)
 	for _, viewIssueKey := range viewIssueListKeys {
 		merger := db.GetMergeOperator(viewIssueKey, func(existingVal, newVal []byte) []byte {
 			return append(existingVal, newVal...)

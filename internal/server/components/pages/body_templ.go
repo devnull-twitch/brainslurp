@@ -71,7 +71,7 @@ func body(projectNo uint64) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"flex justify-around items-center\"><p class=\"text-xs\"><a href=\"https://github.com/microsoft/vscode-codicons\" target=\"_blank\">Icons</a> by Microsoft Corporation licenced under  <a href=\"https://github.com/microsoft/vscode-codicons/blob/main/LICENSE\" target=\"_blank\">CC BY 4.0</a></p></div></body>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"flex justify-around items-center mb-2\"><p class=\"text-xs\"><a href=\"https://github.com/microsoft/vscode-codicons\" target=\"_blank\">Icons</a> by Microsoft Corporation licenced under  <a href=\"https://github.com/microsoft/vscode-codicons/blob/main/LICENSE\" target=\"_blank\">CC BY 4.0</a></p></div></body>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
