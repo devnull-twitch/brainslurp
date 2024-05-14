@@ -92,8 +92,8 @@ func removeFlow(issueObj *pb_issue.Issue, flowNo uint64) []*pb_issue.FlowStatus 
 func doesIssueMatchRequirement(issueObj *pb_issue.Issue, requirements []*pb_flow.FlowRequirement) bool {
 	for _, req := range requirements {
 		// make sure issue has all tags
-		if len(req.GetCheckTagIds()) > 0 {
-			for _, tagId := range req.GetCheckTagIds() {
+		if len(req.GetRequiredTagIds()) > 0 {
+			for _, tagId := range req.GetRequiredTagIds() {
 				if !hasTag(issueObj, tagId) {
 					return false
 				}
@@ -101,8 +101,8 @@ func doesIssueMatchRequirement(issueObj *pb_issue.Issue, requirements []*pb_flow
 		}
 
 		// make sure tags does not have tags it should not have
-		if len(req.GetCheckNoTagIds()) > 0 {
-			for _, noTagId := range req.GetCheckNoTagIds() {
+		if len(req.GetProhibitedTagIds()) > 0 {
+			for _, noTagId := range req.GetProhibitedTagIds() {
 				if hasTag(issueObj, noTagId) {
 					return false
 				}

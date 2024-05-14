@@ -7,8 +7,8 @@ import "lib/proto/issue.proto";
 message FlowRequirement {
   IssueCategory in_category = 10;
   reserved 20, 2;
-  repeated uint64 check_tag_ids = 22;
-  repeated uint64 check_no_tag_ids = 23;
+  repeated uint64 required_tag_ids = 22;
+  repeated uint64 prohibited_tag_ids = 23;
 }
 
 message FlowActions {

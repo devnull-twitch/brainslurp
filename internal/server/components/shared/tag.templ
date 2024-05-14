@@ -1,0 +1,28 @@
+package shared
+
+type TagOptions struct {
+  ShowDelete bool
+  DeleteURL templ.SafeURL
+  DeleteSelector string
+}
+
+templ Tag(
+  projectNo uint64,
+  title string, color string,
+  opts TagOptions,
+) {
+  <div 
+    class={ tagStyle(color), "px-2 my-1 rounded-lg items-center mr-1" }
+    onclick="event.stopPropagation();"
+  >
+    <span>{ title }</span>
+    if opts.ShowDelete {
+      @HxLink(opts.DeleteURL, opts.DeleteSelector, HxLinkOptions{
+        Method: "delete",
+        Swap: "outerHTML",
+      }) {
+        @Codicon("trash", true)
+      }
+    }
+  </div>
+}

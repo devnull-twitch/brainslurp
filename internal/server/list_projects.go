@@ -35,6 +35,11 @@ func HandleProjectListing(db *badger.DB) func(http.ResponseWriter, *http.Request
 			}
 		}
 
-		pages.ProjectListing(projects).Render(r.Context(), w)
+		if r.Header.Get("HX-Request") != "" {
+			pages.BodyLogoOOB(0).Render(r.Context(), w)
+			pages.ProjectListingBody(projects).Render(r.Context(), w)
+		} else {
+			pages.ProjectListing(projects).Render(r.Context(), w)
+		}
 	}
 }

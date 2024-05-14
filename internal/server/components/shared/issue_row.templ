@@ -111,18 +111,11 @@ templ IssueRow(
       <!-- TAGS -->
       <div class="flex flex-initial mr-8">
         for _, issueTagNo := range issue.GetTagNumbers() {
-          <div 
-            class={ tagStyle(tagMap[issueTagNo].GetHexColor()), "px-2 my-1 rounded-lg items-center mr-1" }
-            onclick="event.stopPropagation();"
-          >
-            <span>{ tagMap[issueTagNo].GetTitle() }</span>
-            @HxLink(makeRemoveTagURL(projectNo, issue.GetNumber(), issueTagNo), "#" + makeIssueRowID(issue.GetNumber()), HxLinkOptions{
-              Method: "delete",
-              Swap: "outerHTML",
-            }) {
-              @Codicon("trash", true)
-            }
-          </div>
+          @Tag(projectNo, tagMap[issueTagNo].GetTitle(), tagMap[issueTagNo].GetHexColor(), TagOptions{
+            ShowDelete: true,
+            DeleteURL: makeRemoveTagURL(projectNo, issue.GetNumber(), issueTagNo),
+            DeleteSelector: "#" + makeIssueRowID(issue.GetNumber()),
+          })
         }
       </div>
 

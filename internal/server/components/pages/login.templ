@@ -7,7 +7,7 @@ templ Login() {
 		@header("Login")
 		@body(0) {
       <div class="w-1/3 mx-auto">
-        <form method="POST" hx-post="/" hx-target="body">
+        <form method="POST" hx-post="/" hx-target="#body-content">
           @shared.FormField("username", "Username", "email", shared.FormFieldOptions{
             ExtraSpacey: true,
             Placeholder: "me@example.com",

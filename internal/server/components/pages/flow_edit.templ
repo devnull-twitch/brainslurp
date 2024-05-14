@@ -1,0 +1,198 @@
+package pages
+
+import "fmt"
+import "github.com/devnull-twitch/brainslurp/internal/server/components/shared"
+import "net/url"
+
+import pb_tag "github.com/devnull-twitch/brainslurp/lib/proto/tag"
+import pb_flow "github.com/devnull-twitch/brainslurp/lib/proto/flow"
+
+func makeEditFlowPageTitle(flowTitle string) string {
+  return fmt.Sprintf("Edit flow %s", flowTitle)
+}
+
+func makeRequirementRowID(index int) string {
+  return fmt.Sprintf("req-%d", index)
+}
+
+func makeFlowEditSaveForm(projectNo uint64, flowNo uint64) templ.SafeURL {
+  return templ.URL(fmt.Sprintf("/project/%d/flow/%d/edit", projectNo, flowNo))
+}
+
+func makeRequirementChangePath(projectNo uint64, flowNo uint64, reqIndex int, params map[string]string) templ.SafeURL {
+  rawQuery := ""
+  if len(params) > 0 {
+    pathValue := make(url.Values)
+    for queryKey, queryVal := range params {
+      pathValue.Set(queryKey, queryVal)
+    }
+
+    rawQuery = "?" + pathValue.Encode()
+  }
+  return templ.URL(fmt.Sprintf("/project/%d/flow/%d/requirement/%d/change%s", projectNo, flowNo, reqIndex, rawQuery))
+}
+
+templ FlowEdit(projectNo uint64, flowObj *pb_flow.Flow, tagMap map[uint64]*pb_tag.Tag) {
+  <html>
+		@header(makeEditFlowPageTitle(flowObj.GetTitle()))
+    @body(projectNo) {
+		  @FlowEditBody(projectNo, flowObj, tagMap)
+    }
+	</html>
+}
+
+templ FlowEditBody(projectNo uint64, flowObj *pb_flow.Flow, tagMap map[uint64]*pb_tag.Tag) {
+  <div class="container mx-auto">
+    <h2 class="text-2xl underline pb-4">{ makeEditFlowPageTitle(flowObj.GetTitle()) }</h2>
+    <form method="POST" hx-post={ string(makeFlowEditSaveForm(projectNo, flowObj.GetNumber())) } hx-target="body">
+      @shared.FormField("title", "Title", "text", shared.FormFieldOptions{
+        InitialValue: flowObj.GetTitle(),
+        Placeholder: "My new flow",
+      })
+
+      <!-- Requirement table/list for current flow -->
+      <div class={ formBox(), "pt-2 mb-4 border rounded border-slate-600" } id="req-box">
+        <h4 class="text-lg italic">Requirements</h4>
+        <table class="w-full">
+          <thead>
+            <tr>
+              <th class="w-1/4">Category</th>
+              <th>Required tags</th>
+              <th>Prohibited tags</th>
+            </tr>
+          </thead>
+          <tbody id="flow-requirments">
+            for reqIndex, req := range flowObj.GetRequirements() {
+              @FlowRequirementEditEntry(reqIndex, projectNo, req, flowObj, tagMap)
+            }
+          </tbody>
+          <tfoot>
+            <tr colspan="3" class="flex justify-center">
+              @shared.HxLink(makeRequirementChangePath(projectNo, flowObj.GetNumber(), 0, map[string]string{
+                "action": "new",
+              }), "#flow-requirments", shared.HxLinkOptions{
+                UseButtonStyle: true,
+                Swap: "beforeend",
+              }) {
+                Add additional requirement
+              }
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </form>
+  </div>
+}
+
+func asFormValue(num int32) string {
+  if num == 0  {
+    return ""
+  }
+
+  return fmt.Sprintf("%d", num)
+}
+
+templ FlowRequirementEditEntry(
+  reqIndex int, projectNo uint64,
+  req *pb_flow.FlowRequirement, flowObj *pb_flow.Flow,
+  tagMap map[uint64]*pb_tag.Tag, 
+) {
+  <tr id={ makeRequirementRowID(reqIndex) }>
+    <td>
+      @shared.FormDropdownField("req_category", "Only affects category", shared.FormFieldOptions{
+        HXOptions: shared.FormHXOptions{
+          Method: "put",
+          TargetSelector: "#" + makeRequirementRowID(reqIndex),
+          Swap: "outerHTML",
+          URL: makeRequirementChangePath(projectNo, flowObj.GetNumber(), reqIndex, map[string]string{
+            "action": "change-category",
+          }),
+        },
+      }) {
+        @shared.FormOption("All categories", "", asFormValue(int32(req.GetInCategory())))
+        @shared.FormOption("Bug", "1", asFormValue(int32(req.GetInCategory())))
+        @shared.FormOption("Feature", "2", asFormValue(int32(req.GetInCategory())))
+        @shared.FormOption("Operations", "3", asFormValue(int32(req.GetInCategory())))
+        @shared.FormOption("Question", "4", asFormValue(int32(req.GetInCategory())))
+      }
+    </td>
+    <td>
+      <ol class="flex">
+        for _, tagNumbers := range req.GetRequiredTagIds() {
+          <li class="flex">
+            @shared.Tag(projectNo, tagMap[tagNumbers].GetTitle(), tagMap[tagNumbers].GetHexColor(), shared.TagOptions{
+              ShowDelete: true,
+              DeleteURL: makeRequirementChangePath(projectNo, flowObj.GetNumber(), reqIndex, map[string]string{
+                "action": "delete-required-tag",
+                "tag-number": fmt.Sprintf("%d", tagNumbers),
+              }),
+              DeleteSelector: "#" + makeRequirementRowID(reqIndex),
+            })
+          </li>
+        }
+      </ol>
+      <div class="flex items-start">
+        <div class="flex-1">
+          @shared.FormDropdownField("tpl_required_tag_id", "Required tag", shared.FormFieldOptions{}) {
+            for _, tagObj := range tagMap {
+              <option value={ fmt.Sprintf("%d", tagObj.GetNumber()) }>
+                { tagObj.GetTitle() }
+              </option>
+            }
+          }
+        </div>
+        <div class="h-min mt-6 ml-4 brainslurp-req-add-no-tag">
+          @shared.HxLink(
+            makeRequirementChangePath(projectNo, flowObj.GetNumber(), reqIndex, map[string]string{"action": "add-required-tag"}),
+            "#" + makeRequirementRowID(reqIndex),
+            shared.HxLinkOptions{
+              Method: "put",
+              Swap: "outerHTML",
+            },
+          ) {
+            Add tag
+          }
+        </div>
+      </div>
+    </td>
+    <td>
+      <ol>
+        for _, tagNumbers := range req.GetProhibitedTagIds() {
+          <li class="flex">
+            @shared.Tag(projectNo, tagMap[tagNumbers].GetTitle(), tagMap[tagNumbers].GetHexColor(), shared.TagOptions{
+              ShowDelete: true,
+              DeleteURL: makeRequirementChangePath(projectNo, flowObj.GetNumber(), reqIndex, map[string]string{
+                "action": "delete-prohibited-tag",
+                "tag-number": fmt.Sprintf("%d", tagNumbers),
+              }),
+              DeleteSelector: "#" + makeRequirementRowID(reqIndex),
+            })
+          </li>
+        }
+      </ol>
+      <div class="flex items-start">
+        <div class="flex-1">
+          @shared.FormDropdownField("tpl_prohibited_tag_id", "Prohibited tag", shared.FormFieldOptions{}) {
+            for _, tagObj := range tagMap {
+              <option value={ fmt.Sprintf("%d", tagObj.GetNumber()) }>
+                { tagObj.GetTitle() }
+              </option>
+            }
+          }
+        </div>
+        <div class="h-min mt-6 ml-4 brainslurp-req-add-no-tag">
+          @shared.HxLink(
+            makeRequirementChangePath(projectNo, flowObj.GetNumber(), reqIndex, map[string]string{"action": "add-prohibited-tag"}),
+            "#" + makeRequirementRowID(reqIndex),
+            shared.HxLinkOptions{
+              Method: "put",
+              Swap: "outerHTML",
+            },
+          ) {
+            Add tag
+          }
+        </div>
+      </div>
+    </td>
+  </tr>
+}

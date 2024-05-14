@@ -20,14 +20,14 @@ type CreateOptions struct {
 	Actions      []*pb_flow.FlowActions
 }
 
-func Create(db *badger.DB, opts CreateOptions) error {
+func Create(db *badger.DB, opts CreateOptions) (uint64, error) {
 	flowNo, err := database.NextNumber(db, database.FlowSequenceKey)
 	if err != nil {
-		return fmt.Errorf("error getting new flow number: %w", err)
+		return 0, fmt.Errorf("error getting new flow number: %w", err)
 	}
 
 	if opts.ProjectNo <= 0 {
-		return fmt.Errorf("no project number")
+		return 0, fmt.Errorf("no project number")
 	}
 
 	keyLength := (2 * binary.MaxVarintLen64) + 1
@@ -45,18 +45,18 @@ func Create(db *badger.DB, opts CreateOptions) error {
 	}
 	flowVal, err := proto.Marshal(flowObj)
 	if err != nil {
-		return fmt.Errorf("unable to marshal issue: %w", err)
+		return 0, fmt.Errorf("unable to marshal issue: %w", err)
 	}
 
 	if err := db.Update(func(txn *badger.Txn) error {
 		return txn.Set(flowKey, flowVal)
 	}); err != nil {
-		return fmt.Errorf("unable to insert issue: %w", err)
+		return 0, fmt.Errorf("unable to insert issue: %w", err)
 	}
 
 	logrus.WithField("key", fmt.Sprintf("%x", flowKey)).Info("flow inserted")
 
 	go issues.UpdateIssues(db, opts.ProjectNo, flowObj)
 
-	return nil
+	return flowNo, nil
 }

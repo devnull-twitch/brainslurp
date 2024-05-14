@@ -1,5 +1,8 @@
 package pages
 
 templ Error(msg string) {
-	<div>{ msg }</div>
+	<html>
+		@header("Ooops!")
+		<div>{ msg }</div>
+	</html>
 }

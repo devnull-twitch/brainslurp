@@ -29,8 +29,9 @@ func HandleFlowList(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 				}
 
 				if r.Header.Get("HX-Request") != "" {
+					pages.BodyLogoOOB(uint64(projectNo)).Render(r.Context(), w)
 					if r.Header.Get("HX-Target") == "flow-list" {
-						pages.FlowListItems(flows).Render(r.Context(), w)
+						pages.FlowListItems(uint64(projectNo), flows).Render(r.Context(), w)
 					} else {
 						pages.FlowListBody(uint64(projectNo), flows).Render(r.Context(), w)
 					}

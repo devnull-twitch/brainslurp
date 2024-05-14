@@ -103,8 +103,8 @@ func main() {
 		Title:     "Setup Test",
 		Requirements: []*pb_flow.FlowRequirement{
 			{
-				InCategory:  pb_issue.IssueCategory_Feature,
-				CheckTagIds: []uint64{testTagNo},
+				InCategory:     pb_issue.IssueCategory_Feature,
+				RequiredTagIds: []uint64{testTagNo},
 			},
 		},
 		Actions: []*pb_flow.FlowActions{

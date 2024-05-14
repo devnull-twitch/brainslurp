@@ -26,6 +26,7 @@ func HandleTagsListing(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 				}
 
 				if r.Header.Get("HX-Request") != "" {
+					pages.BodyLogoOOB(uint64(projectNo)).Render(r.Context(), w)
 					if r.Header.Get("HX-Target") == "flow-list" {
 						pages.TagListItems(tagList).Render(r.Context(), w)
 					} else {
