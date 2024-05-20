@@ -31,7 +31,7 @@ templ IssueCreateBody(projectNo uint64) {
         }
         @shared.FormTextareaField("body", "Description", shared.FormFieldOptions{})
         <div class="flex justify-center">
-          @shared.FormButton(shared.ButtonOptions{}) {
+          @shared.Button(shared.ButtonOptions{TypeSubmit: true, Primary: true}) {
             Create
           }
         </div>

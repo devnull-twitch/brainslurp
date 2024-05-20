@@ -60,9 +60,9 @@ func HandleNewIssueTag(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 				}
 
 				tagMap := make(map[uint64]*pb_tag.Tag)
-				tagList, err := tag.GetMany(db, uint64(projectNo), issueObj.TagNumbers)
+				tagList, err := tag.List(db, uint64(projectNo))
 				if err != nil {
-					pages.Error("Error loading issues").Render(r.Context(), w)
+					pages.Error("Error loading tags").Render(r.Context(), w)
 					return
 				}
 				for _, tagObj := range tagList {

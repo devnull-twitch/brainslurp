@@ -58,15 +58,20 @@ templ FlowListItem(projectNo uint64, flowObj *pb_flow.Flow) {
 
     <div class="flex flex-none pr-4 py-2">
       @shared.HxLink(makeEditFlowPath(projectNo, flowObj.GetNumber()), "#body-content", shared.HxLinkOptions{
+        ButtonOptions: shared.ButtonOptions{
+          InButtonRow: true,
+        },
         UseButtonStyle: true,
-        InButtonRow: true,
+        PushURL: true,
       }) {
         @shared.Codicon("edit", true)
         Edit
       }
       @shared.HxLink("#", "#" + makeflowRowID(flowObj.GetNumber()), shared.HxLinkOptions{
+        ButtonOptions: shared.ButtonOptions{
+          InButtonRow: true,
+        },
         UseButtonStyle: true,
-        InButtonRow: true,
       }) {
         @shared.Codicon("trash", true)
         Delete

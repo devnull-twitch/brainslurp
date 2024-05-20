@@ -1,0 +1,409 @@
+package pages
+
+import "fmt"
+import "github.com/devnull-twitch/brainslurp/internal/server/components/shared"
+import pb_tag "github.com/devnull-twitch/brainslurp/lib/proto/tag"
+import pb_flow "github.com/devnull-twitch/brainslurp/lib/proto/flow"
+
+templ FlowForm(projectNo uint64, editObj *pb_flow.Flow, tags []*pb_tag.Tag) {
+  <html>
+		@header("Create new flow")
+    @body(projectNo) {
+		  @FlowFormBody(projectNo, editObj, tags)
+    }
+	</html>
+}
+
+func makeFlowCreateSaveForm(projectNo uint64, flowNo uint64) templ.SafeURL {
+  if flowNo > 0 {
+    return templ.URL(fmt.Sprintf("/project/%d/flow/%d/edit", projectNo, flowNo))
+  }
+
+  return templ.URL(fmt.Sprintf("/project/%d/flows/new", projectNo))
+}
+
+css formBox() {
+  transform: translateX(-3%);
+  width: 106%;
+  padding-left: 3%;
+  padding-right: 3%;
+}
+
+func makeNewTagURL(projectNo uint64, flowNo uint64) templ.SafeURL {
+  return templ.URL(fmt.Sprintf("/project/%d/issue/%d/tags", projectNo, flowNo))
+}
+
+func makeRemoveTagURL(projectNo uint64, flowNo uint64, issueTagNo uint64) templ.SafeURL {
+  return templ.URL(fmt.Sprintf("/project/%d/flow/%d/tag/%d", projectNo, flowNo, issueTagNo))
+}
+
+func convertSliceToString[I uint | uint64 | uint32 | int | int32 | int64](input []I) []string {
+  strSlice := make([]string, len(input))
+  for i, num := range input {
+    strSlice[i] = fmt.Sprintf("%d", num)
+  }
+
+  return strSlice
+}
+
+func createFlowFormAlpineData(editObj *pb_flow.Flow) string {
+  builder := &strings.Builder{}
+  builder.WriteString(`{
+    requirements: [`)
+  if editObj != nil {
+    for _, flowReq := range editObj.GetRequirements() {
+      builder.WriteString(fmt.Sprintf(
+        `
+        {
+          required: [%s],
+          prohibited: [%s],
+          category: %d,
+          add_required() { 
+            this.required.push(0);
+          },
+          subtract_required() {
+            if (this.required.length <= 0) {
+              return;
+            }
+            this.required.pop();
+          },
+          add_prohibited() {
+            this.prohibited.push(0);
+          },
+          subtract_prohibited() {
+            if (this.prohibited.length <= 0) {
+              return;
+            }
+            this.prohibited.pop();
+          }
+        }`,
+        strings.Join(convertSliceToString(flowReq.GetRequiredTagIds()), ","),
+        strings.Join(convertSliceToString(flowReq.GetProhibitedTagIds()), ","),
+        flowReq.GetInCategory(),
+      ))
+    }
+  }
+  builder.WriteString(`],
+    actions: [`)
+  if editObj != nil {
+    for _, flowAct := range editObj.GetActions() {
+      builder.WriteString(fmt.Sprintf(
+        `
+          {
+            title: "%s",
+            add: [%s],
+            remove: [%s],
+            add_add() { 
+              this.add.push(0);
+            },
+            subtract_add() {
+              if (this.add.length <= 0) {
+                return;
+              }
+              this.add.pop();
+            },
+            add_remove() {
+              this.remove.push(0);
+            },
+            subtract_remove() {
+              if (this.remove.length <= 0) {
+                return;
+              }
+              this.remove.pop();
+            },
+        },`,
+        flowAct.GetTitle(),
+        strings.Join(convertSliceToString(flowAct.GetAddTagIds()), ","),
+        strings.Join(convertSliceToString(flowAct.GetRemoveTagIds()), ","),
+      ))
+    }
+  }
+  builder.WriteString(`],
+          pop_requirement() {
+            this.requirements.pop();
+          },
+          push_requirement() { 
+            this.requirements.push({
+              required: [],
+              prohibited: [],
+              add_required() { 
+                this.required += 1
+              },
+              subtract_required() {
+                if (this.required <= 0) {
+                  return;
+                }
+                this.required -= 1;
+              },
+              add_prohibited() {
+                this.prohibited += 1
+              },
+              subtract_prohibited() {
+                if (this.prohibited <= 0) {
+                  return;
+                }
+                this.prohibited -= 1;
+              }
+            })
+          },
+          pop_action() {
+            this.actions.pop();
+          },
+          push_actions() {
+            this.actions.push({
+              add: [],
+              remove: [],
+              add_add() { 
+                this.add += 1
+              },
+              subtract_add() {
+                if (this.add <= 0) {
+                  return;
+                }
+                this.add.push(0);
+              },
+              add_remove() {
+                this.remove += 1
+              },
+              subtract_remove() {
+                if (this.remove <= 0) {
+                  return;
+                }
+                this.remove.push(0);
+              },
+            });
+          }
+        }`)
+
+    return builder.String()
+}
+
+templ FlowFormBody(projectNo uint64, editObj *pb_flow.Flow, tags []*pb_tag.Tag) {
+  <div class="container mx-auto">
+    <h2 class="text-2xl underline pb-4">Create new flow</h2>
+    <div class="w-1/3">
+      <form 
+        method="POST"
+        hx-post={ string(makeFlowCreateSaveForm(projectNo, editObj.GetNumber())) }
+        hx-target="#body-content"
+        hx-push-url="true"
+      >
+        @shared.FormField("title", "Title", "text", shared.FormFieldOptions{Placeholder: "My new flow", InitialValue: editObj.GetTitle()})
+        <div x-data={ createFlowFormAlpineData(editObj) }>
+          <!-- Requirements -->
+          <template x-for="(req, reqIndex) in requirements">
+            @shared.Box() {
+              <h3 class="text-lg underline">Requirement No <span x-text="reqIndex + 1"></span></h3>
+              <div>
+                <p class="font-semibold">Category</p>
+                <select class="p-2 rounded border border-slate-700" x-bind:name="'req_' + reqIndex + '_category'">
+                  <option
+                    value=""
+                    x-bind:selected="req.category === 0 && 'true'"
+                  >
+                    All categories
+                  </option>
+                  <option
+                    value="1"
+                    x-bind:selected="req.category === 1 && 'true'"
+                  >
+                    Bug
+                  </option>
+                  <option
+                    value="2"
+                    x-bind:selected="req.category === 2 && 'true'"
+                  >
+                    Feature
+                  </option>
+                  <option
+                    value="3"
+                    x-bind:selected="req.category === 3 && 'true'"
+                  >
+                    Operations
+                  </option>
+                  <option
+                    value="4"
+                    x-bind:selected="req.category === 4 && 'true'"
+                  >
+                    Question
+                  </option>
+                </select>
+                <p class="font-semibold">Required Tags</p>
+                <div class="flex gap-1 items-center">
+                  <template x-for="selectedId in req.required">
+                    <select class="p-2 rounded border border-slate-700" x-bind:name="'req_' + reqIndex + '_required'">
+                      for _, tagObj := range tags {
+                        <option 
+                          value={ fmt.Sprintf("%d", tagObj.GetNumber()) }
+                          x-bind:selected={ fmt.Sprintf("selectedId === %d && 'true'", tagObj.GetNumber()) }
+                        >
+                          { tagObj.GetTitle() }
+                        </option>
+                      }
+                    </select>
+                  </template>
+                  <template x-if="req.required.length > 0">
+                    @shared.Button(shared.ButtonOptions{
+                      AlpineOnClick: "req.subtract_required()",
+                      Small: true,
+                    }) {
+                      @shared.Codicon("dash", true)
+                    }
+                  </template>
+                  @shared.Button(shared.ButtonOptions{
+                    AlpineOnClick: "req.add_required()",
+                    Small: true,
+                  }) {
+                    @shared.Codicon("add", true)
+                  }
+                </div>
+              </div>
+              <div>
+                <p class="font-semibold">Prohibited Tags</p>
+                <div class="flex gap-1 items-center">
+                  <template x-for="selectedId in req.prohibited">
+                    <select class="p-2 rounded border border-slate-700" x-bind:name="'req_' + reqIndex + '_prohibited'">
+                      for _, tagObj := range tags {
+                        <option 
+                          value={ fmt.Sprintf("%d", tagObj.GetNumber()) }
+                          x-bind:selected={ fmt.Sprintf("selectedId === %d && 'true'", tagObj.GetNumber()) }
+                        >
+                          { tagObj.GetTitle() }
+                        </option>
+                      }
+                    </select>
+                  </template>
+                  <template x-if="req.prohibited.length > 0">
+                    @shared.Button(shared.ButtonOptions{
+                      AlpineOnClick: "req.subtract_prohibited()",
+                      Small: true,
+                    }) {
+                      @shared.Codicon("dash", true)
+                    }
+                  </template>
+                  @shared.Button(shared.ButtonOptions{
+                    AlpineOnClick: "req.add_prohibited()",
+                    Small: true,
+                  }) {
+                    @shared.Codicon("add", true)
+                  }
+                </div>
+              </div>
+            }
+          </template>
+          <div class="flex gap-1">
+            <template x-if="requirements.length > 0">
+              @shared.Button(shared.ButtonOptions{
+                AlpineOnClick: "pop_requirement()",
+                Small: true,
+              }) {
+                Remove last requirement
+              }
+            </template>
+            @shared.Button(shared.ButtonOptions{
+              AlpineOnClick: "push_requirement()",
+            }) {
+              Add requirement
+            }
+          </div>
+
+          <!-- Actions -->
+          <template x-for="(act, actIndex) in actions">
+            @shared.Box() {
+              <h3 class="text-lg underline">Action No <span x-text="actIndex + 1"></span></h3>
+              <p class="font-semibold">Button Label</p>
+              <input 
+                class={ "p-2 rounded border border-slate-700" } 
+                type="text"
+                x-bind:name="'act_' + actIndex + '_title'"
+                x-bind:value="act.title"
+                placeholder="Button Label" />
+              <div>
+                <p class="font-semibold">Add Tags</p>
+                <div class="flex gap-1 items-center">
+                  <template x-for="selectedId in act.add">
+                    <select class="p-2 rounded border border-slate-700" x-bind:name="'act_' + actIndex + '_add'">
+                      for _, tagObj := range tags {
+                        <option 
+                          value={ fmt.Sprintf("%d", tagObj.GetNumber()) }
+                          x-bind:selected={ fmt.Sprintf("selectedId === %d && 'true'", tagObj.GetNumber()) }
+                        >
+                          { tagObj.GetTitle() }
+                        </option>
+                      }
+                    </select>
+                  </template>
+                  <template x-if="act.add.length > 0">
+                    @shared.Button(shared.ButtonOptions{
+                      AlpineOnClick: "act.subtract_add()",
+                      Small: true,
+                    }) {
+                      @shared.Codicon("dash", true)
+                    }
+                  </template>
+                  @shared.Button(shared.ButtonOptions{
+                    AlpineOnClick: "act.add_add()",
+                    Small: true,
+                  }) {
+                    @shared.Codicon("add", true)
+                  }
+                </div>
+              </div>
+              <div>
+                <p class="font-semibold">Remove Tags</p>
+                <div class="flex gap-1 items-center">
+                  <template x-for="selectedId in act.remove">
+                    <select class="p-2 rounded border border-slate-700" x-bind:name="'act_' + actIndex + '_remove'">
+                      for _, tagObj := range tags {
+                        <option 
+                          value={ fmt.Sprintf("%d", tagObj.GetNumber()) }
+                          x-bind:selected={ fmt.Sprintf("selectedId === %d && 'true'", tagObj.GetNumber()) }
+                        >
+                          { tagObj.GetTitle() }
+                        </option>
+                      }
+                    </select>
+                  </template>
+                  <template x-if="act.remove.length > 0">
+                    @shared.Button(shared.ButtonOptions{
+                      AlpineOnClick: "act.subtract_remove()",
+                      Small: true,
+                    }) {
+                      @shared.Codicon("dash", true)
+                    }
+                  </template>
+                  @shared.Button(shared.ButtonOptions{
+                    AlpineOnClick: "act.add_remove()",
+                    Small: true,
+                  }) {
+                    @shared.Codicon("add", true)
+                  }
+                </div>
+              </div>
+            }
+          </template>
+          <div class="mt-2 flex gap-1">
+            <template x-if="actions.length > 0">
+              @shared.Button(shared.ButtonOptions{
+                AlpineOnClick: "pop_action()",
+                Small: true,
+              }) {
+                Remove last action
+              }
+            </template>
+            @shared.Button(shared.ButtonOptions{
+              AlpineOnClick: "push_actions()",
+            }) {
+              Add action
+            }
+          </div>
+        </div>
+        <div class="flex justify-center mt-3">
+          @shared.Button(shared.ButtonOptions{TypeSubmit: true, Primary: true}) {
+            Create
+          }
+        </div>
+      </form>
+    </div>
+  </div>
+}

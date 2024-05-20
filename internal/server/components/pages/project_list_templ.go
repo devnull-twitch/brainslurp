@@ -128,6 +128,7 @@ func ProjectListingBody(projects []project.ListItem) templ.Component {
 				return templ_7745c5c3_Err
 			})
 			templ_7745c5c3_Err = shared.HxLink(makeProjectIssueLink(projectEntry.No), "#body-content", shared.HxLinkOptions{
+				ButtonOptions:  shared.ButtonOptions{Primary: true},
 				UseButtonStyle: true,
 				PushURL:        true,
 			}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var5), templ_7745c5c3_Buffer)
@@ -150,6 +151,7 @@ func ProjectListingBody(projects []project.ListItem) templ.Component {
 				return templ_7745c5c3_Err
 			})
 			templ_7745c5c3_Err = shared.HxLink(makeFlowListURL(projectEntry.No), "#body-content", shared.HxLinkOptions{
+				ButtonOptions:  shared.ButtonOptions{Primary: true},
 				UseButtonStyle: true,
 				PushURL:        true,
 			}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var6), templ_7745c5c3_Buffer)
@@ -172,6 +174,7 @@ func ProjectListingBody(projects []project.ListItem) templ.Component {
 				return templ_7745c5c3_Err
 			})
 			templ_7745c5c3_Err = shared.HxLink(makeTagListURL(projectEntry.No), "#body-content", shared.HxLinkOptions{
+				ButtonOptions:  shared.ButtonOptions{Primary: true},
 				UseButtonStyle: true,
 				PushURL:        true,
 			}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var7), templ_7745c5c3_Buffer)

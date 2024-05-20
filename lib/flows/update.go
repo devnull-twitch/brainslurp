@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/devnull-twitch/brainslurp/lib/database"
+	"github.com/devnull-twitch/brainslurp/lib/issues"
 	pb_flow "github.com/devnull-twitch/brainslurp/lib/proto/flow"
 	"github.com/dgraph-io/badger/v4"
 	"google.golang.org/protobuf/proto"
@@ -21,6 +22,8 @@ func Update(db *badger.DB, projectNo uint64, flowObj *pb_flow.Flow) error {
 	}); err != nil {
 		return fmt.Errorf("error updating flow: %w", err)
 	}
+
+	go issues.UpdateIssues(db, projectNo, flowObj)
 
 	return nil
 }

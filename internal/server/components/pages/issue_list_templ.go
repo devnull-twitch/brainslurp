@@ -125,8 +125,10 @@ func ListBody(
 			return templ_7745c5c3_Err
 		})
 		templ_7745c5c3_Err = shared.HxLink(makeIssuesUnfilteredPath(projectNo), "#issue-list", shared.HxLinkOptions{
+			ButtonOptions: shared.ButtonOptions{
+				InButtonRow: true,
+			},
 			UseButtonStyle: true,
-			InButtonRow:    true,
 			PushURL:        true,
 		}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var4), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
@@ -142,7 +144,7 @@ func ListBody(
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(view.Title)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/issue_list.templ`, Line: 61, Col: 18}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/issue_list.templ`, Line: 65, Col: 18}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
@@ -154,8 +156,10 @@ func ListBody(
 				return templ_7745c5c3_Err
 			})
 			templ_7745c5c3_Err = shared.HxLink(makeIssuesFilterPath(projectNo, view.GetNumber()), "#issue-list", shared.HxLinkOptions{
+				ButtonOptions: shared.ButtonOptions{
+					InButtonRow: true,
+				},
 				UseButtonStyle: true,
-				InButtonRow:    true,
 				PushURL:        true,
 			}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var5), templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
@@ -178,8 +182,10 @@ func ListBody(
 			return templ_7745c5c3_Err
 		})
 		templ_7745c5c3_Err = shared.HxLink(templ.URL("/views/new"), "#body-content", shared.HxLinkOptions{
+			ButtonOptions: shared.ButtonOptions{
+				InButtonRow: true,
+			},
 			UseButtonStyle: true,
-			InButtonRow:    true,
 			PushURL:        true,
 		}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var7), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {

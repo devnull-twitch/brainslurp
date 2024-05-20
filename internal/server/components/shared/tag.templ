@@ -6,6 +6,11 @@ type TagOptions struct {
   DeleteSelector string
 }
 
+css tagStyle(colorCode string) {
+  background-color: { colorCode };
+  color: { getTextColorFromBGColor(colorCode) };
+}
+
 templ Tag(
   projectNo uint64,
   title string, color string,

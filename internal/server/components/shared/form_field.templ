@@ -1,5 +1,9 @@
 package shared
 
+import "fmt"
+
+import pb_tag "github.com/devnull-twitch/brainslurp/lib/proto/tag"
+
 type (
   FormHXOptions struct {
     Method string
@@ -116,4 +120,12 @@ templ FormTextareaField(name string, label string, opts FormFieldOptions) {
 
 templ FormTextarea(name string) {
   <textarea name={ name } id={ name } class="w-full p-2 min-h-16 rounded border border-slate-700"></textarea>
+}
+
+templ TagOption(tagObj *pb_tag.Tag) {
+  <option 
+    value={ fmt.Sprintf("%d", tagObj.GetNumber()) }
+  >
+    { tagObj.GetTitle() }
+  </option>
 }

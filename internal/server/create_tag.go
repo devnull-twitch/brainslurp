@@ -64,5 +64,5 @@ func handleNewTagSubmit(
 		pages.Error("Error inserting flow").Render(r.Context(), w)
 	}
 
-	HandleFlowList(db)(w, r)
+	HandleTagsListing(db)(w, r)
 }

@@ -1,29 +1,20 @@
 package shared
 
-import "strings"
+type ButtonOptions struct {
+  InButtonRow bool
+  OnClick templ.ComponentScript
+  AlpineOnClick string
+  Small bool
+  Primary bool
+  TypeSubmit bool
+}
 
 type HxLinkOptions struct {
+  ButtonOptions
   UseButtonStyle bool
-  InButtonRow bool
   PushURL bool
   Method string
   Swap string
-}
-
-func makeLinkButtonCSS(inRow bool) string {
-  classes := []string{
-    "px-4", "py-2", "text-white",
-    "bg-gradient-to-b", "from-cyan-500", "to-indigo-500", "hover:from-cyan-600", "hover:to-indigo-900",
-  }
-  if inRow {
-    // use first-of-type instead of first because if the first button has an onClick handler there might be
-    // a script node as first element in there.
-    classes = append(classes, "first-of-type:rounded-l-lg", "last:rounded-r-lg")
-  } else {
-    classes = append(classes, "rounded-lg")
-  }
-
-  return strings.Join(classes, " ")
 }
 
 templ HxLink(
@@ -33,7 +24,14 @@ templ HxLink(
 ) {
   <a 
     if opts.UseButtonStyle {
-      class={ makeLinkButtonCSS(opts.InButtonRow) }
+      class={
+        templ.KV("bg-gradient-to-b from-cyan-500 to-indigo-500 hover:from-cyan-600 hover:to-indigo-900 text-white", opts.Primary),
+        templ.KV("bg-gradient-to-b from-slate-300 to-slate-500 hover:from-cyan-50 hover:to-indigo-300", !opts.Primary),
+        templ.KV("px-4 py-2", !opts.Small),
+        templ.KV("px-2 py-1", opts.Small),
+        templ.KV("first-of-type:rounded-l-lg last:rounded-r-lg", opts.InButtonRow),
+        templ.KV("rounded-lg", !opts.InButtonRow),
+      }
     }
     href={ targetURL }
     hx-target={targetSelector}
@@ -60,21 +58,26 @@ templ HxLink(
   </a>
 }
 
-type ButtonOptions struct {
-  InButtonRow bool
-  OnClick templ.ComponentScript
-}
-
-templ FormButton(opts ButtonOptions) {
-  <button type="submit" class={ makeLinkButtonCSS(opts.InButtonRow) }>{ children... }</button>
-}
-
 templ Button(opts ButtonOptions) {
   <button 
-    type="button"
-    class={ makeLinkButtonCSS(opts.InButtonRow) }
+    if opts.TypeSubmit {
+      type="submit"
+    } else {
+      type="button"
+    }
+    class={
+      templ.KV("bg-gradient-to-b from-cyan-500 to-indigo-500 hover:from-cyan-600 hover:to-indigo-900 text-white", opts.Primary),
+      templ.KV("bg-gradient-to-b from-slate-300 to-slate-500 hover:from-cyan-50 hover:to-indigo-300", !opts.Primary),
+      templ.KV("px-4 py-2", !opts.Small),
+      templ.KV("px-2 py-1", opts.Small),
+      templ.KV("first-of-type:rounded-l-lg last:rounded-r-lg", opts.InButtonRow),
+      templ.KV("rounded-lg", !opts.InButtonRow),
+    }
     if opts.OnClick.Name != "" {
       onclick={ opts.OnClick }
+    }
+    if opts.AlpineOnClick != "" {
+      x-on:click={opts.AlpineOnClick}
     }
   >
     { children... }

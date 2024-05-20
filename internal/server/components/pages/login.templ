@@ -17,7 +17,7 @@ templ Login() {
             Placeholder: "*******",
           })
           <div class="flex justify-center">
-            @shared.FormButton(shared.ButtonOptions{}) {
+            @shared.Button(shared.ButtonOptions{TypeSubmit: true, Primary: true}) {
               Login
             }
           </div>

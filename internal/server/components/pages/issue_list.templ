@@ -46,24 +46,30 @@ templ ListBody(
 		<div class="flex justify-between pb-4">
 			<div class="flex">
 				@shared.HxLink(makeIssuesUnfilteredPath(projectNo), "#issue-list", shared.HxLinkOptions{
+					ButtonOptions: shared.ButtonOptions{
+						InButtonRow: true,
+					},
 					UseButtonStyle: true,
-					InButtonRow: true,
 					PushURL: true,
 				}) {
 					All
 				}
 				for _, view := range views {
 					@shared.HxLink(makeIssuesFilterPath(projectNo, view.GetNumber()), "#issue-list", shared.HxLinkOptions{
+						ButtonOptions: shared.ButtonOptions{
+							InButtonRow: true,
+						},
 						UseButtonStyle: true,
-						InButtonRow: true,
 						PushURL: true,
 					}) {
 						{ view.Title }
 					}
 				}
 				@shared.HxLink(templ.URL("/views/new"), "#body-content", shared.HxLinkOptions{
+					ButtonOptions: shared.ButtonOptions{
+						InButtonRow: true,
+					},
 					UseButtonStyle: true,
-					InButtonRow: true,
 					PushURL: true,
 				}) {
 					+ New view

@@ -9,11 +9,23 @@ import "github.com/a-h/templ"
 import "context"
 import "io"
 import "bytes"
+import "strings"
 
 type TagOptions struct {
 	ShowDelete     bool
 	DeleteURL      templ.SafeURL
 	DeleteSelector string
+}
+
+func tagStyle(colorCode string) templ.CSSClass {
+	var templ_7745c5c3_CSSBuilder strings.Builder
+	templ_7745c5c3_CSSBuilder.WriteString(string(templ.SanitizeCSS(`background-color`, colorCode)))
+	templ_7745c5c3_CSSBuilder.WriteString(string(templ.SanitizeCSS(`color`, getTextColorFromBGColor(colorCode))))
+	templ_7745c5c3_CSSID := templ.CSSID(`tagStyle`, templ_7745c5c3_CSSBuilder.String())
+	return templ.ComponentCSSClass{
+		ID:    templ_7745c5c3_CSSID,
+		Class: templ.SafeCSS(`.` + templ_7745c5c3_CSSID + `{` + templ_7745c5c3_CSSBuilder.String() + `}`),
+	}
 }
 
 func Tag(
@@ -58,7 +70,7 @@ func Tag(
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/shared/tag.templ`, Line: 18, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/shared/tag.templ`, Line: 23, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {

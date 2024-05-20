@@ -24,8 +24,6 @@ func Run(db *badger.DB) error {
 	http.HandleFunc("GET /project/{projectNo}/flows", HandleFlowList(db))
 	http.HandleFunc("/project/{projectNo}/flows/new", HandleFlowCreate(db))
 	http.HandleFunc("/project/{projectNo}/flow/{flowNumber}/edit", HandleFlowEdit(db))
-	http.HandleFunc("/project/{projectNo}/flow/{flowNumber}/requirement/{reqIndex}/change", HandleFlowRequirementChange(db))
-	http.HandleFunc("/project/{projectNo}/flow/{flowNumber}/action", HandleFlowCreate(db))
 
 	http.HandleFunc("GET /project/{projectNo}/tags", HandleTagsListing(db))
 	http.HandleFunc("/project/{projectNo}/tags/new", HandleTagCreate(db))

@@ -1,6 +1,7 @@
 package shared
 
 import "fmt"
+import "strings"
 
 import "github.com/crazy3lf/colorconv"
 import "github.com/sirupsen/logrus"
@@ -33,11 +34,6 @@ func getTextColorFromBGColor(hexStr string) string {
   } else {
     return "#000"
   }
-}
-
-css tagStyle(colorCode string) {
-  background-color: { colorCode };
-  color: { getTextColorFromBGColor(colorCode) };
 }
 
 func makeNewTagURL(projectNo uint64, issueNo uint64) templ.SafeURL {
@@ -129,7 +125,11 @@ templ IssueRow(
         }
         for _, issueFlow := range issueFlows {
           for _, flowAction := range issueFlow.GetActions() {
-            <button type="button" class={ makeLinkButtonCSS(true) }>{ flowAction.GetTitle() }</button>
+            @Button(ButtonOptions{
+              InButtonRow: true,
+            }) {
+              { flowAction.GetTitle() }
+            }
           }
         }
       </div>
@@ -159,7 +159,7 @@ templ IssueRow(
               </option>
             }
           }
-          @FormButton(ButtonOptions{}) {
+          @Button(ButtonOptions{TypeSubmit: true}) {
             Add
           }
         </form>

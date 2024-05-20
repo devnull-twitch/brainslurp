@@ -230,8 +230,11 @@ func FlowListItem(projectNo uint64, flowObj *pb_flow.Flow) templ.Component {
 				return templ_7745c5c3_Err
 			})
 			templ_7745c5c3_Err = shared.HxLink(makeEditFlowPath(projectNo, flowObj.GetNumber()), "#body-content", shared.HxLinkOptions{
+				ButtonOptions: shared.ButtonOptions{
+					InButtonRow: true,
+				},
 				UseButtonStyle: true,
-				InButtonRow:    true,
+				PushURL:        true,
 			}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var9), templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -256,8 +259,10 @@ func FlowListItem(projectNo uint64, flowObj *pb_flow.Flow) templ.Component {
 				return templ_7745c5c3_Err
 			})
 			templ_7745c5c3_Err = shared.HxLink("#", "#"+makeflowRowID(flowObj.GetNumber()), shared.HxLinkOptions{
+				ButtonOptions: shared.ButtonOptions{
+					InButtonRow: true,
+				},
 				UseButtonStyle: true,
-				InButtonRow:    true,
 			}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var10), templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err

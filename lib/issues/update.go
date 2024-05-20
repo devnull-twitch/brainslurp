@@ -31,7 +31,7 @@ func Update(db *badger.DB, projectNo uint64, issue *pb_issue.Issue) (*pb_issue.I
 			return err
 		}
 
-		issueVal, err := proto.Marshal(issue)
+		issueVal, err := proto.Marshal(modIssue)
 		if err != nil {
 			return fmt.Errorf("unable to marshal issue: %w", err)
 		}

@@ -13,7 +13,6 @@ import (
 
 func fetchFlows(txn *badger.Txn, projectNo uint64, issueObj *pb_issue.Issue) ([]*pb_flow.Flow, error) {
 	listFlows := make([]*pb_flow.Flow, 0)
-	flowObj := &pb_flow.Flow{}
 	for _, flowState := range issueObj.GetFlows() {
 		keyLength := (2 * binary.MaxVarintLen64) + 1
 		flowKey := make([]byte, keyLength)
@@ -31,6 +30,7 @@ func fetchFlows(txn *badger.Txn, projectNo uint64, issueObj *pb_issue.Issue) ([]
 			return nil, fmt.Errorf("error copying flow data: %w", err)
 		}
 
+		flowObj := &pb_flow.Flow{}
 		if err := proto.Unmarshal(flowData, flowObj); err != nil {
 			return nil, fmt.Errorf("error unmarshaling flow: %w", err)
 		}

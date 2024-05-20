@@ -238,8 +238,10 @@ func TagListItem(tagObj *pb_tag.Tag) templ.Component {
 				return templ_7745c5c3_Err
 			})
 			templ_7745c5c3_Err = shared.HxLink("#", "#"+makeTagRowID(tagObj.GetNumber()), shared.HxLinkOptions{
+				ButtonOptions: shared.ButtonOptions{
+					InButtonRow: true,
+				},
 				UseButtonStyle: true,
-				InButtonRow:    true,
 			}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var10), templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -264,8 +266,10 @@ func TagListItem(tagObj *pb_tag.Tag) templ.Component {
 				return templ_7745c5c3_Err
 			})
 			templ_7745c5c3_Err = shared.HxLink("#", "#"+makeTagRowID(tagObj.GetNumber()), shared.HxLinkOptions{
+				ButtonOptions: shared.ButtonOptions{
+					InButtonRow: true,
+				},
 				UseButtonStyle: true,
-				InButtonRow:    true,
 			}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var11), templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err

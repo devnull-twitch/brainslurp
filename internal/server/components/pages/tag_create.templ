@@ -24,7 +24,7 @@ templ TagCreateBody(projectNo uint64) {
         @shared.FormField("title", "Tag", "text", shared.FormFieldOptions{Placeholder: "Tag"})
         @shared.FormField("color", "Color", "color", shared.FormFieldOptions{})
         <div class="flex justify-center">
-          @shared.FormButton(shared.ButtonOptions{}) {
+          @shared.Button(shared.ButtonOptions{TypeSubmit: true}) {
             Create
           }
         </div>

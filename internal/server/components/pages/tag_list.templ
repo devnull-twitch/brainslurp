@@ -54,15 +54,19 @@ templ TagListItem(tagObj *pb_tag.Tag) {
 
     <div class="flex flex-none pr-4 py-2">
       @shared.HxLink("#", "#" + makeTagRowID(tagObj.GetNumber()), shared.HxLinkOptions{
+        ButtonOptions: shared.ButtonOptions{
+          InButtonRow: true,
+        },
         UseButtonStyle: true,
-        InButtonRow: true,
       }) {
         @shared.Codicon("edit", true)
         Edit
       }
       @shared.HxLink("#", "#" + makeTagRowID(tagObj.GetNumber()), shared.HxLinkOptions{
+        ButtonOptions: shared.ButtonOptions{
+          InButtonRow: true,
+        },
         UseButtonStyle: true,
-        InButtonRow: true,
       }) {
         @shared.Codicon("trash", true)
         Delete

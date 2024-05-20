@@ -25,14 +25,9 @@ func UpdateIssues(db *badger.DB, projectNo uint64, flow *pb_flow.Flow) {
 		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
 			item := it.Item()
 
-			issueData, err := item.ValueCopy(nil)
+			err := database.Read(item, issueObj)
 			if err != nil {
-				logrus.WithError(err).Error("unable to copy data from issue")
-				continue
-			}
-
-			if err := proto.Unmarshal(issueData, issueObj); err != nil {
-				logrus.WithError(err).Error("unable to unmarshal data from issue")
+				logrus.WithError(err).Error("unable to load issue")
 				continue
 			}
 
