@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	"github.com/devnull-twitch/brainslurp/internal/server"
 	"github.com/devnull-twitch/brainslurp/lib/flows"
 	"github.com/devnull-twitch/brainslurp/lib/issues"
@@ -45,7 +47,7 @@ func main() {
 		panic(err)
 	}
 
-	_, err = view.Create(db, view.CreateOptions{
+	viewNo, err := view.Create(db, view.CreateOptions{
 		Title:     "Test List",
 		ProjectNo: projectNo,
 	})
@@ -87,6 +89,9 @@ func main() {
 		Title:      "Test no3",
 		Category:   pb_issue.IssueCategory_Feature,
 		TagNumbers: []uint64{},
+		Views: []*pb_issue.ViewStatus{
+			{Number: viewNo, SetAt: time.Now().Unix()},
+		},
 	}); err != nil {
 		panic(err)
 	}

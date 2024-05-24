@@ -17,11 +17,7 @@ func ListFromView(db *badger.DB, projectNo uint64, viewNo uint64) ([]*pb_issue.I
 		return nil, nil, fmt.Errorf("no project number")
 	}
 
-	viewIsssueKeyLength := (2 * binary.MaxVarintLen64) + 1
-	viewIssueKey := make([]byte, viewIsssueKeyLength)
-	viewIssueKey[0] = database.ViewIssuesPrefix
-	binary.PutUvarint(viewIssueKey[1:], projectNo)
-	binary.PutUvarint(viewIssueKey[binary.MaxVarintLen64+1:], viewNo)
+	viewIssueKey := database.Keygen(database.ViewIssuesPrefix, projectNo, viewNo)
 
 	issueList := make([]*pb_issue.Issue, 0)
 	flowToIssueMap := make(map[uint64][]*pb_flow.Flow)
@@ -37,7 +33,7 @@ func ListFromView(db *badger.DB, projectNo uint64, viewNo uint64) ([]*pb_issue.I
 		}
 
 		r := bytes.NewReader(idList)
-		// key is uint64 + 1 byte as a type
+		// key is type ( 1 byte ) + projectNo ( 10 ) + issueNo ( 10 )
 		keyBuf := make([]byte, 2*binary.MaxVarintLen64+1)
 		for r.Len() > 0 {
 			_, err := r.Read(keyBuf)

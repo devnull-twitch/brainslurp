@@ -1,7 +1,6 @@
 package view
 
 import (
-	"encoding/binary"
 	"fmt"
 	"time"
 
@@ -27,16 +26,8 @@ func Create(db *badger.DB, opts CreateOptions) (uint64, error) {
 		return 0, fmt.Errorf("no project ID given")
 	}
 
-	keyLength := (2 * binary.MaxVarintLen64) + 1
-	viewKey := make([]byte, keyLength)
-	viewKey[0] = database.ViewPrefix
-	binary.PutUvarint(viewKey[1:], opts.ProjectNo)
-	binary.PutUvarint(viewKey[binary.MaxVarintLen64+1:], viewNo)
-
-	viewIssueKey := make([]byte, keyLength)
-	viewIssueKey[0] = database.ViewIssuesPrefix
-	binary.PutUvarint(viewIssueKey[1:], opts.ProjectNo)
-	binary.PutUvarint(viewIssueKey[binary.MaxVarintLen64+1:], viewNo)
+	viewKey := database.Keygen(database.ViewPrefix, opts.ProjectNo, viewNo)
+	viewIssueKey := database.Keygen(database.ViewIssuesPrefix, opts.ProjectNo, viewNo)
 
 	viewVal, err := proto.Marshal(&pb_view.View{
 		Number:    viewNo,

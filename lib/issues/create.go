@@ -30,7 +30,6 @@ func Create(db *badger.DB, projectNo uint64, newIssue *pb_issue.Issue) error {
 
 	newIssue.Number = issueNo
 	newIssue.CreatedAt = time.Now().Unix()
-	newIssue.Views = make([]*pb_issue.ViewStatus, 0)
 
 	issueVal, err := proto.Marshal(newIssue)
 	if err != nil {
@@ -46,6 +45,10 @@ func Create(db *badger.DB, projectNo uint64, newIssue *pb_issue.Issue) error {
 	logrus.WithField("key", fmt.Sprintf("%x", issueKey)).Info("issue inserted")
 
 	viewIssueListKeys := make([][]byte, 0)
+	for _, viewEntry := range newIssue.GetViews() {
+		viewIsssueListeKey := database.Keygen(database.ViewIssuesPrefix, projectNo, viewEntry.GetNumber())
+		viewIssueListKeys = append(viewIssueListKeys, viewIsssueListeKey)
+	}
 	for _, viewIssueKey := range viewIssueListKeys {
 		merger := db.GetMergeOperator(viewIssueKey, func(existingVal, newVal []byte) []byte {
 			return append(existingVal, newVal...)
