@@ -1,0 +1,32 @@
+package shared
+
+import "time"
+import "fmt"
+import "math"
+
+type TimeOptions struct {}
+
+func timestamp(unix int64) string {
+  return time.Unix(unix, 0).Format("2006-01-02 15:03")
+}
+
+func relative(unix int64) string {
+  dur := time.Now().Sub(time.Unix(unix, 0))
+  if dur < time.Minute {
+    return "just now"
+  }
+  if dur < time.Hour {
+    return fmt.Sprintf("%d minutes ago", int(math.Round(dur.Minutes())))
+  }
+  if dur < time.Hour * 24 {
+    return fmt.Sprintf("%d hours ago", int(math.Round(dur.Hours())))
+  }
+
+  return fmt.Sprintf("%d days ago", int(math.Round(dur.Hours() / 24)))
+}
+
+templ Time(unix int64, opts TimeOptions) {
+  <span class="text-sm" title={ timestamp(unix) }>
+    { relative(unix) }
+  </span>
+}

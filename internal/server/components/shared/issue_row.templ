@@ -147,14 +147,27 @@ templ IssueRow(
     </div>
 
     <!-- Issue Details box -->
-    <div class="hidden bg-white brainslurp-detail" id={ makeIssueDetailsID(issue.GetNumber()) }>
+    <div class="hidden brainslurp-detail" id={ makeIssueDetailsID(issue.GetNumber()) }>
+      <div class="flex items-center mx-10 gap-2 mb-2">
+        <p class="flex-initial text-sm">
+          created 
+          @Time(issue.GetCreatedAt(), TimeOptions{})
+        </p>
+        <p class="flex-initial text-sm">
+          by
+          UserA
+        </p>
+      </div>
+      
       if issue.GetBody() != "" {
-        <div class="mb-2">
-          @templ.Raw(renderIssueBody(issue.GetBody()))
+        <div class="mb-1 mx-10">
+          <article class="bg-slate-200 rounded-xl border p-5">
+            @templ.Raw(renderIssueBody(issue.GetBody()))
+          </article>
         </div>
       }
-      <div class="flex justify-around">
-        
+
+      <div class="flex justify-between mx-10">  
         <!-- Tag Form -->
         <form
           hx-post={ string(makeNewTagURL(projectNo, issue.GetNumber())) }
@@ -185,6 +198,28 @@ templ IssueRow(
           </ol>
         </div>
       </div>
+
+      <!-- Activity feed -->
+      if len(issue.GetActivities()) > 0 {
+        <div class="flex flex-col mx-10 mb-10 gap-2">
+          <h2 class="text-xl italic underline ml-5">Activity feed</h2>
+          for _, issueActivity := range issue.GetActivities() {
+            <article class="bg-slate-200 rounded-xl border">
+              <header class="px-5 py-2">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-lg">User</h3>
+                  @Time(issueActivity.GetCreatedAt(), TimeOptions{})
+                </div>
+                <hr class="my-2 border-white" />
+              </header>
+              <div class="px-5 pb-5">
+                <p>{ issueActivity.GetBody() }</p>
+                <hr class="my-2 border-white" />
+              </div>
+            </article>
+          }
+        </div>
+      }
     </div>
   </div>
 }

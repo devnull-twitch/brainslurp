@@ -126,7 +126,7 @@ func IssueCreateBody(projectNo uint64, tags []*pb_tag.Tag) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div x-data=\"{ tags: [], add_tag() { this.tags.push(0); }, remove_tag() { this.tags.pop(); } }\"><div class=\"flex gap-1 items-center\"><p>Tags:</p><template x-for=\"tagNo in tags\"><select class=\"p-2 rounded border border-slate-700\" x-bind:name=\"&#39;req_&#39; + reqIndex + &#39;_required&#39;\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div x-data=\"{ tags: [], add_tag() { this.tags.push(0); }, remove_tag() { this.tags.pop(); } }\"><div class=\"flex gap-1 items-center\"><p>Tags:</p><template x-for=\"tagNo in tags\"><select class=\"p-2 rounded border border-slate-700\" name=\"tag\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

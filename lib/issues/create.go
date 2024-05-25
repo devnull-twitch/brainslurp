@@ -29,14 +29,18 @@ func Create(db *badger.DB, projectNo uint64, newIssue *pb_issue.Issue) error {
 	binary.PutUvarint(issueKey[binary.MaxVarintLen64+1:], issueNo)
 
 	newIssue.Number = issueNo
-	newIssue.CreatedAt = time.Now().Unix()
-
-	issueVal, err := proto.Marshal(newIssue)
-	if err != nil {
-		return fmt.Errorf("unable to marshal issue: %w", err)
+	if newIssue.GetCreatedAt() <= 0 {
+		newIssue.CreatedAt = time.Now().Unix()
 	}
 
 	if err := db.Update(func(txn *badger.Txn) error {
+		loadAndCheckFlows(txn, projectNo, newIssue)
+
+		issueVal, err := proto.Marshal(newIssue)
+		if err != nil {
+			return fmt.Errorf("unable to marshal issue: %w", err)
+		}
+
 		return txn.Set(issueKey, issueVal)
 	}); err != nil {
 		return fmt.Errorf("unable to insert issue: %w", err)

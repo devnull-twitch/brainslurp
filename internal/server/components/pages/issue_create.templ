@@ -36,7 +36,7 @@ templ IssueCreateBody(projectNo uint64, tags []*pb_tag.Tag) {
           <div class="flex gap-1 items-center">
             <p>Tags:</p>
             <template x-for="tagNo in tags">
-              <select class="p-2 rounded border border-slate-700" x-bind:name="'req_' + reqIndex + '_required'">
+              <select class="p-2 rounded border border-slate-700" name="tag">
                 for _, tagObj := range tags {
                   <option 
                     value={ fmt.Sprintf("%d", tagObj.GetNumber()) }

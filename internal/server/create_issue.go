@@ -68,10 +68,14 @@ func handleNewIssueSubmit(db *badger.DB, projectNo uint64, w http.ResponseWriter
 		return
 	}
 
+	tagStrNos := r.Form["tag"]
+	tagNos := StrToIntSlice[uint64](tagStrNos)
+
 	if err := issues.Create(db, projectNo, &pb_issue.Issue{
-		Title:    issueTitle,
-		Body:     r.Form.Get("body"),
-		Category: pb_issue.IssueCategory(catInt),
+		Title:      issueTitle,
+		Body:       r.Form.Get("body"),
+		Category:   pb_issue.IssueCategory(catInt),
+		TagNumbers: tagNos,
 	}); err != nil {
 		logrus.WithError(err).Warn("error saving new issue")
 		w.WriteHeader(http.StatusInternalServerError)

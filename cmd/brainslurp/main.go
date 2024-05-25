@@ -104,6 +104,7 @@ func main() {
 	}
 	if err := issues.Create(db, projectNo, &pb_issue.Issue{
 		Title:      "Test no2",
+		Body:       "We might *want* this feature but we dont *need* it.",
 		Category:   pb_issue.IssueCategory_Feature,
 		TagNumbers: []uint64{testTagNo},
 	}); err != nil {
@@ -111,10 +112,29 @@ func main() {
 	}
 	if err := issues.Create(db, projectNo, &pb_issue.Issue{
 		Title:      "Test no3",
+		CreatedAt:  time.Now().Add(-time.Hour * 50).Unix(),
 		Category:   pb_issue.IssueCategory_Feature,
 		TagNumbers: []uint64{},
+		Body:       "We **really** need this top notch feature.",
 		Views: []*pb_issue.ViewStatus{
 			{Number: viewNo, SetAt: time.Now().Unix()},
+		},
+		Activities: []*pb_issue.IssueActivity{
+			{
+				CreatedAt:   time.Now().Unix(),
+				TriggerUser: userNo,
+				Body:        "This is a message",
+			},
+			{
+				CreatedAt:   time.Now().Add(-time.Hour * 12).Unix(),
+				TriggerUser: userNo,
+				Body:        "This is a message",
+			},
+			{
+				CreatedAt:   time.Now().Add(-time.Hour * 48).Unix(),
+				TriggerUser: userNo,
+				Body:        "This is a message",
+			},
 		},
 	}); err != nil {
 		panic(err)
