@@ -1,7 +1,6 @@
 package issues
 
 import (
-	"encoding/binary"
 	"fmt"
 	"time"
 
@@ -14,12 +13,7 @@ import (
 )
 
 func Update(db *badger.DB, projectNo uint64, issue *pb_issue.Issue) (*pb_issue.Issue, []*pb_flow.Flow, error) {
-
-	issueKeyLength := (2 * binary.MaxVarintLen64) + 1
-	issueKey := make([]byte, issueKeyLength)
-	issueKey[0] = database.IssuePrefix
-	binary.PutUvarint(issueKey[1:], projectNo)
-	binary.PutUvarint(issueKey[binary.MaxVarintLen64+1:], issue.GetNumber())
+	issueKey := database.Keygen(database.IssuePrefix, projectNo, issue.GetNumber())
 
 	var modIssue *pb_issue.Issue
 	var issueFlows []*pb_flow.Flow
@@ -47,13 +41,9 @@ func Update(db *badger.DB, projectNo uint64, issue *pb_issue.Issue) (*pb_issue.I
 }
 
 func loadAndCheckFlows(txn *badger.Txn, projectNo uint64, issueObj *pb_issue.Issue) ([]*pb_flow.Flow, error) {
-	keyLength := binary.MaxVarintLen64 + 1
-	flowPrefix := make([]byte, keyLength)
-	flowPrefix[0] = database.FlowPrefix
-	binary.PutUvarint(flowPrefix[1:], projectNo)
+	flowPrefix := database.Keygen(database.FlowPrefix, projectNo)
 
 	issueFlows := make([]*pb_flow.Flow, 0)
-
 	it := txn.NewIterator(badger.DefaultIteratorOptions)
 	defer it.Close()
 	for it.Seek(flowPrefix); it.ValidForPrefix(flowPrefix); it.Next() {

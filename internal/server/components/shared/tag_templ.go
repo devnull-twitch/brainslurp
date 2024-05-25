@@ -45,7 +45,7 @@ func Tag(
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		var templ_7745c5c3_Var2 = []any{tagStyle(color), "px-2 my-1 rounded-lg items-center mr-1"}
+		var templ_7745c5c3_Var2 = []any{tagStyle(color), "px-2 my-1 rounded-lg flex items-center mr-1"}
 		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var2...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err

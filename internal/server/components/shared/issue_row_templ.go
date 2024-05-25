@@ -54,6 +54,10 @@ func makeRemoveTagURL(projectNo uint64, issueNo uint64, issueTagNo uint64) templ
 	return templ.URL(fmt.Sprintf("/project/%d/issue/%d/tag/%d", projectNo, issueNo, issueTagNo))
 }
 
+func makeFlowActionURL(projectNo uint64, issueNo uint64, flowNo uint64, actionIndex int) templ.SafeURL {
+	return templ.URL(fmt.Sprintf("/project/%d/issue/%d/flow/%d/action/%d", projectNo, issueNo, flowNo, actionIndex))
+}
+
 func renderIssueBody(bodyStr string) string {
 	out := &strings.Builder{}
 	if err := goldmark.Convert([]byte(bodyStr), out); err != nil {
@@ -119,7 +123,7 @@ func IssueRow(
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(makeIssueRowID(issue.GetNumber()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/shared/issue_row.templ`, Line: 81, Col: 117}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/shared/issue_row.templ`, Line: 85, Col: 117}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -149,7 +153,7 @@ func IssueRow(
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", issue.GetNumber()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/shared/issue_row.templ`, Line: 85, Col: 91}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/shared/issue_row.templ`, Line: 89, Col: 91}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -193,7 +197,7 @@ func IssueRow(
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(issue.GetTitle())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/shared/issue_row.templ`, Line: 105, Col: 45}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/shared/issue_row.templ`, Line: 109, Col: 45}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -240,7 +244,7 @@ func IssueRow(
 			return templ_7745c5c3_Err
 		}
 		for _, issueFlow := range issueFlows {
-			for _, flowAction := range issueFlow.GetActions() {
+			for actionIndex, flowAction := range issueFlow.GetActions() {
 				templ_7745c5c3_Var7 := templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 					templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 					if !templ_7745c5c3_IsBuffer {
@@ -250,7 +254,7 @@ func IssueRow(
 					var templ_7745c5c3_Var8 string
 					templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(flowAction.GetTitle())
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/shared/issue_row.templ`, Line: 131, Col: 37}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/shared/issue_row.templ`, Line: 142, Col: 37}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 					if templ_7745c5c3_Err != nil {
@@ -261,8 +265,15 @@ func IssueRow(
 					}
 					return templ_7745c5c3_Err
 				})
-				templ_7745c5c3_Err = Button(ButtonOptions{
-					InButtonRow: true,
+				templ_7745c5c3_Err = HxLink(makeFlowActionURL(
+					projectNo,
+					issue.GetNumber(),
+					issueFlow.GetNumber(),
+					actionIndex,
+				), "#"+makeIssueRowID(issue.GetNumber()), HxLinkOptions{
+					ButtonOptions:  ButtonOptions{InButtonRow: true, Primary: false},
+					UseButtonStyle: true,
+					Method:         "post",
 				}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var7), templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
@@ -276,7 +287,7 @@ func IssueRow(
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(makeIssueDetailsID(issue.GetNumber()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/shared/issue_row.templ`, Line: 139, Col: 93}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/shared/issue_row.templ`, Line: 150, Col: 93}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -307,7 +318,7 @@ func IssueRow(
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(string(makeNewTagURL(projectNo, issue.GetNumber())))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/shared/issue_row.templ`, Line: 149, Col: 71}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/shared/issue_row.templ`, Line: 160, Col: 71}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -320,7 +331,7 @@ func IssueRow(
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs("#" + makeIssueRowID(issue.GetNumber()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/shared/issue_row.templ`, Line: 150, Col: 61}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/shared/issue_row.templ`, Line: 161, Col: 61}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
@@ -344,7 +355,7 @@ func IssueRow(
 				var templ_7745c5c3_Var13 string
 				templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", tagObj.GetNumber()))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/shared/issue_row.templ`, Line: 157, Col: 67}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/shared/issue_row.templ`, Line: 168, Col: 67}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 				if templ_7745c5c3_Err != nil {
@@ -357,7 +368,7 @@ func IssueRow(
 				var templ_7745c5c3_Var14 string
 				templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(tagObj.GetTitle())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/shared/issue_row.templ`, Line: 158, Col: 35}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/shared/issue_row.templ`, Line: 169, Col: 35}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 				if templ_7745c5c3_Err != nil {
@@ -408,7 +419,7 @@ func IssueRow(
 			var templ_7745c5c3_Var16 string
 			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(issueFlow.GetTitle())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/shared/issue_row.templ`, Line: 172, Col: 40}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/shared/issue_row.templ`, Line: 183, Col: 40}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {

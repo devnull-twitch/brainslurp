@@ -8,6 +8,7 @@ import (
 	"github.com/devnull-twitch/brainslurp/internal/server/components/pages"
 	"github.com/devnull-twitch/brainslurp/lib/issues"
 	pb_issue "github.com/devnull-twitch/brainslurp/lib/proto/issue"
+	"github.com/devnull-twitch/brainslurp/lib/tag"
 	"github.com/dgraph-io/badger/v4"
 	"github.com/sirupsen/logrus"
 )
@@ -22,7 +23,7 @@ func HandleIssueCreate(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 				projectNo, _ := strconv.Atoi(r.PathValue("projectNo"))
 
 				if r.Method == "GET" {
-					renderIssueCreateForm(uint64(projectNo), w, r)
+					renderIssueCreateForm(db, uint64(projectNo), w, r)
 				}
 				if r.Method == "POST" {
 					handleNewIssueSubmit(db, uint64(projectNo), w, r)
@@ -32,11 +33,18 @@ func HandleIssueCreate(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-func renderIssueCreateForm(projectNo uint64, w http.ResponseWriter, r *http.Request) {
+func renderIssueCreateForm(db *badger.DB, projectNo uint64, w http.ResponseWriter, r *http.Request) {
+	projectTags, err := tag.List(db, projectNo)
+	if err != nil {
+		logrus.WithError(err).Warn("error loading tags")
+		w.WriteHeader(http.StatusInternalServerError)
+		pages.Error("Server error").Render(r.Context(), w)
+	}
+
 	if r.Header.Get("HX-Request") != "" {
-		pages.IssueCreateBody(projectNo).Render(r.Context(), w)
+		pages.IssueCreateBody(projectNo, projectTags).Render(r.Context(), w)
 	} else {
-		pages.IssueCreate(projectNo).Render(r.Context(), w)
+		pages.IssueCreate(projectNo, projectTags).Render(r.Context(), w)
 	}
 }
 

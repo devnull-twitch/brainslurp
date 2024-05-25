@@ -71,6 +71,30 @@ func main() {
 		panic(err)
 	}
 
+	_, err = tag.Create(db, projectNo, &pb_tag.Tag{
+		Title:    "Critical",
+		HexColor: "#FC1616",
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = tag.Create(db, projectNo, &pb_tag.Tag{
+		Title:    "Blocked",
+		HexColor: "#AD0104",
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = tag.Create(db, projectNo, &pb_tag.Tag{
+		Title:    "Feedback",
+		HexColor: "#FC1689",
+	})
+	if err != nil {
+		panic(err)
+	}
+
 	if err := issues.Create(db, projectNo, &pb_issue.Issue{
 		Title:      "Test no1",
 		Category:   pb_issue.IssueCategory_Bug,

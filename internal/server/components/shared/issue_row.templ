@@ -44,6 +44,10 @@ func makeRemoveTagURL(projectNo uint64, issueNo uint64, issueTagNo uint64) templ
   return templ.URL(fmt.Sprintf("/project/%d/issue/%d/tag/%d", projectNo, issueNo, issueTagNo))
 }
 
+func makeFlowActionURL(projectNo uint64, issueNo uint64, flowNo uint64, actionIndex int) templ.SafeURL {
+  return templ.URL(fmt.Sprintf("/project/%d/issue/%d/flow/%d/action/%d", projectNo, issueNo, flowNo, actionIndex))
+}
+
 func renderIssueBody(bodyStr string) string {
   out := &strings.Builder{}
   if err := goldmark.Convert([]byte(bodyStr), out); err != nil {
@@ -124,9 +128,16 @@ templ IssueRow(
           Details
         }
         for _, issueFlow := range issueFlows {
-          for _, flowAction := range issueFlow.GetActions() {
-            @Button(ButtonOptions{
-              InButtonRow: true,
+          for actionIndex, flowAction := range issueFlow.GetActions() {
+            @HxLink(makeFlowActionURL(
+              projectNo,
+              issue.GetNumber(),
+              issueFlow.GetNumber(),
+              actionIndex,
+            ), "#" + makeIssueRowID(issue.GetNumber()), HxLinkOptions{
+              ButtonOptions: ButtonOptions{InButtonRow: true, Primary: false},
+              UseButtonStyle: true,
+              Method: "post",
             }) {
               { flowAction.GetTitle() }
             }

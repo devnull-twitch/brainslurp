@@ -1,13 +1,14 @@
 package pages
 
 import "github.com/devnull-twitch/brainslurp/internal/server/components/shared"
+import pb_tag "github.com/devnull-twitch/brainslurp/lib/proto/tag"
 import "fmt"
 
-templ IssueCreate(projectNo uint64) {
+templ IssueCreate(projectNo uint64, tags []*pb_tag.Tag) {
   <html>
 		@header("Create new issue")
     @body(projectNo) {
-		  @IssueCreateBody(projectNo)
+		  @IssueCreateBody(projectNo, tags)
     }
 	</html>
 }
@@ -16,7 +17,7 @@ func makeIssueCreateSaveForm(projectNo uint64) templ.SafeURL {
   return templ.URL(fmt.Sprintf("/project/%d/issues/new", projectNo))
 }
 
-templ IssueCreateBody(projectNo uint64) {
+templ IssueCreateBody(projectNo uint64, tags []*pb_tag.Tag) {
   <div class="container mx-auto">
     <h2 class="text-2xl underline pb-4">Create new issue</h2>
     <div class="w-1/3">
@@ -30,6 +31,39 @@ templ IssueCreateBody(projectNo uint64) {
           <option value="4">Question</option>
         }
         @shared.FormTextareaField("body", "Description", shared.FormFieldOptions{})
+        
+        <div x-data="{ tags: [], add_tag() { this.tags.push(0); }, remove_tag() { this.tags.pop(); } }">
+          <div class="flex gap-1 items-center">
+            <p>Tags:</p>
+            <template x-for="tagNo in tags">
+              <select class="p-2 rounded border border-slate-700" x-bind:name="'req_' + reqIndex + '_required'">
+                for _, tagObj := range tags {
+                  <option 
+                    value={ fmt.Sprintf("%d", tagObj.GetNumber()) }
+                    x-bind:selected={ fmt.Sprintf("tagNo === %d && 'true'", tagObj.GetNumber()) }
+                  >
+                    { tagObj.GetTitle() }
+                  </option>
+                }
+              </select>
+            </template>
+            <template x-if="tags.length > 0">
+              @shared.Button(shared.ButtonOptions{
+                AlpineOnClick: "remove_tag()",
+                Small: true,
+              }) {
+                @shared.Codicon("dash", true)
+              }
+            </template>
+            @shared.Button(shared.ButtonOptions{
+              AlpineOnClick: "add_tag()",
+              Small: true,
+            }) {
+              @shared.Codicon("add", true)
+            }
+          </div>
+        </div>
+
         <div class="flex justify-center">
           @shared.Button(shared.ButtonOptions{TypeSubmit: true, Primary: true}) {
             Create
