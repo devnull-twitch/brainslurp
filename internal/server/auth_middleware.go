@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 
+	pb_user "github.com/devnull-twitch/brainslurp/lib/proto/user"
 	"github.com/devnull-twitch/brainslurp/lib/user"
 	"github.com/dgraph-io/badger/v4"
 	"github.com/golang-jwt/jwt/v5"
@@ -17,10 +18,10 @@ var (
 	ErrNoCookie = errors.New("no cookie")
 )
 
-func parseAuthAndLoadUser(db *badger.DB, r *http.Request) (user.User, error) {
+func parseAuthAndLoadUser(db *badger.DB, r *http.Request) (*pb_user.User, error) {
 	jwtCookie, err := r.Cookie("jwt")
 	if err != nil {
-		return user.User{}, ErrNoCookie
+		return nil, ErrNoCookie
 	}
 
 	claims := jwt.MapClaims{}
@@ -28,21 +29,21 @@ func parseAuthAndLoadUser(db *badger.DB, r *http.Request) (user.User, error) {
 		return SigningSecret, nil
 	})
 	if err != nil {
-		return user.User{}, fmt.Errorf("error parsing jwt: %w", err)
+		return nil, fmt.Errorf("error parsing jwt: %w", err)
 	}
 
 	noBuf, err := hex.DecodeString(claims["no"].(string))
 	if err != nil {
-		return user.User{}, fmt.Errorf("error jwt doenst contain user no in hex format: %w", err)
+		return nil, fmt.Errorf("error jwt doenst contain user no in hex format: %w", err)
 	}
 	userNo, err := binary.ReadUvarint(bytes.NewReader(noBuf))
 	if err != nil {
-		return user.User{}, fmt.Errorf("error jwt no isnt usigned 64 int: %w", err)
+		return nil, fmt.Errorf("error jwt no isnt usigned 64 int: %w", err)
 	}
 
 	userObj, err := user.Get(db, userNo)
 	if err != nil {
-		return user.User{}, fmt.Errorf("error user could not be loaded: %w", err)
+		return nil, fmt.Errorf("error user could not be loaded: %w", err)
 	}
 
 	return userObj, nil

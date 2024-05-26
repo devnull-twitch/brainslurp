@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"net/http"
 	"slices"
 	"strconv"
@@ -9,7 +10,9 @@ import (
 	"github.com/devnull-twitch/brainslurp/internal/server/components/shared"
 	"github.com/devnull-twitch/brainslurp/lib/issues"
 	pb_tag "github.com/devnull-twitch/brainslurp/lib/proto/tag"
+	pb_user "github.com/devnull-twitch/brainslurp/lib/proto/user"
 	"github.com/devnull-twitch/brainslurp/lib/tag"
+	"github.com/devnull-twitch/brainslurp/lib/user"
 	"github.com/dgraph-io/badger/v4"
 	"github.com/sirupsen/logrus"
 )
@@ -19,27 +22,11 @@ func HandleNewIssueTag(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		walkChain(
 			db, w, r,
-			func(db *badger.DB, w http.ResponseWriter, r *http.Request, next nextCall) {
-				projectNo, _ := strconv.Atoi(r.PathValue("projectNo"))
-
-				issueNo, err := strconv.Atoi(r.PathValue("issueNo"))
-				if err != nil {
-					logrus.WithFields(logrus.Fields{
-						"error":      err,
-						"path_value": "issueNo",
-					}).Warn("URL parsing error")
-					w.WriteHeader(http.StatusBadRequest)
-					pages.Error("Error parsing URL").Render(r.Context(), w)
-					return
-				}
-
-				issueObj, _, err := issues.Get(db, uint64(projectNo), uint64(issueNo))
-				if err != nil {
-					logrus.WithError(err).Warn("error getting issue")
-					w.WriteHeader(http.StatusInternalServerError)
-					pages.Error("Error updating issue").Render(r.Context(), w)
-					return
-				}
+			authUserWithProjectNo,
+			checkIssueNumber,
+			func(ctx context.Context, w http.ResponseWriter, r *http.Request, next nextCall) {
+				projectObj := getProjectFromContext(ctx)
+				issueObj := getIssueFromContext(ctx)
 
 				newTagIdStr := r.FormValue("tag_id")
 				newTagId, err := strconv.Atoi(newTagIdStr)
@@ -51,7 +38,7 @@ func HandleNewIssueTag(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 				}
 
 				issueObj.TagNumbers = append(issueObj.GetTagNumbers(), uint64(newTagId))
-				modIssue, issueFlows, err := issues.Update(db, uint64(projectNo), issueObj)
+				modIssue, issueFlows, err := issues.Update(db, projectObj.GetNumber(), issueObj)
 				if err != nil {
 					logrus.WithError(err).Warn("error updating issue")
 					w.WriteHeader(http.StatusInternalServerError)
@@ -60,7 +47,7 @@ func HandleNewIssueTag(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 				}
 
 				tagMap := make(map[uint64]*pb_tag.Tag)
-				tagList, err := tag.List(db, uint64(projectNo))
+				tagList, err := tag.List(db, projectObj.GetNumber())
 				if err != nil {
 					pages.Error("Error loading tags").Render(r.Context(), w)
 					return
@@ -69,8 +56,22 @@ func HandleNewIssueTag(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 					tagMap[tagObj.GetNumber()] = tagObj
 				}
 
+				userNos := make([]uint64, len(projectObj.GetMembers()))
+				for i, membership := range projectObj.GetMembers() {
+					userNos[i] = membership.GetUserNo()
+				}
+				projectUsers, err := user.List(db, userNos)
+				if err != nil {
+					pages.Error("Error loading users").Render(r.Context(), w)
+					return
+				}
+				userMap := make(map[uint64]*pb_user.User)
+				for _, memberUserObj := range projectUsers {
+					userMap[memberUserObj.GetNumber()] = memberUserObj
+				}
+
 				if r.Header.Get("HX-Request") != "" {
-					shared.IssueRow(uint64(projectNo), modIssue, issueFlows, tagMap).Render(r.Context(), w)
+					shared.IssueRow(projectObj.GetNumber(), modIssue, issueFlows, tagMap, userMap).Render(r.Context(), w)
 				}
 			},
 		)
@@ -83,27 +84,10 @@ func HandleIssueTag(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 		walkChain(
 			db, w, r,
 			authUserWithProjectNo,
-			func(db *badger.DB, w http.ResponseWriter, r *http.Request, next nextCall) {
-				projectNo, _ := strconv.Atoi(r.PathValue("projectNo"))
-
-				issueNo, err := strconv.Atoi(r.PathValue("issueNo"))
-				if err != nil {
-					logrus.WithFields(logrus.Fields{
-						"error":      err,
-						"path_value": "issueNo",
-					}).Warn("URL parsing error")
-					w.WriteHeader(http.StatusBadRequest)
-					pages.Error("Error parsing URL").Render(r.Context(), w)
-					return
-				}
-
-				issueObj, _, err := issues.Get(db, uint64(projectNo), uint64(issueNo))
-				if err != nil {
-					logrus.WithError(err).Warn("error getting issue")
-					w.WriteHeader(http.StatusInternalServerError)
-					pages.Error("Error updating issue").Render(r.Context(), w)
-					return
-				}
+			checkIssueNumber,
+			func(ctx context.Context, w http.ResponseWriter, r *http.Request, next nextCall) {
+				projectObj := getProjectFromContext(ctx)
+				issueObj := getIssueFromContext(ctx)
 
 				removeTagNoStr := r.PathValue("tagNumber")
 				removeTagNumber, err := strconv.Atoi(removeTagNoStr)
@@ -124,7 +108,7 @@ func HandleIssueTag(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 					issueObj.TagNumbers = slices.Delete(issueObj.TagNumbers, removeIndex, removeIndex+1)
 				}
 
-				modIssue, issueFlows, err := issues.Update(db, uint64(projectNo), issueObj)
+				modIssue, issueFlows, err := issues.Update(db, projectObj.GetNumber(), issueObj)
 				if err != nil {
 					logrus.WithError(err).Warn("error updating issue")
 					w.WriteHeader(http.StatusInternalServerError)
@@ -133,7 +117,7 @@ func HandleIssueTag(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 				}
 
 				tagMap := make(map[uint64]*pb_tag.Tag)
-				tagList, err := tag.GetMany(db, uint64(projectNo), issueObj.TagNumbers)
+				tagList, err := tag.GetMany(db, projectObj.GetNumber(), issueObj.TagNumbers)
 				if err != nil {
 					pages.Error("Error loading issues").Render(r.Context(), w)
 					return
@@ -142,9 +126,23 @@ func HandleIssueTag(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 					tagMap[tagObj.GetNumber()] = tagObj
 				}
 
+				userNos := make([]uint64, len(projectObj.GetMembers()))
+				for i, membership := range projectObj.GetMembers() {
+					userNos[i] = membership.GetUserNo()
+				}
+				projectUsers, err := user.List(db, userNos)
+				if err != nil {
+					pages.Error("Error loading users").Render(r.Context(), w)
+					return
+				}
+				userMap := make(map[uint64]*pb_user.User)
+				for _, memberUserObj := range projectUsers {
+					userMap[memberUserObj.GetNumber()] = memberUserObj
+				}
+
 				w.WriteHeader(http.StatusCreated)
 				if r.Header.Get("HX-Request") != "" {
-					shared.IssueRow(uint64(projectNo), modIssue, issueFlows, tagMap).Render(r.Context(), w)
+					shared.IssueRow(projectObj.GetNumber(), modIssue, issueFlows, tagMap, userMap).Render(r.Context(), w)
 				}
 			},
 		)

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -18,23 +19,23 @@ func HandleIssueCreate(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 		walkChain(
 			db, w, r,
 			authUserWithProjectNo,
-			func(db *badger.DB, w http.ResponseWriter, r *http.Request, next nextCall) {
-				// projectNo is already validated by authUserWithProjectNo so we dont need to error check again
-				projectNo, _ := strconv.Atoi(r.PathValue("projectNo"))
-
+			func(ctx context.Context, w http.ResponseWriter, r *http.Request, next nextCall) {
 				if r.Method == "GET" {
-					renderIssueCreateForm(db, uint64(projectNo), w, r)
+					renderIssueCreateForm(ctx, w, r)
 				}
 				if r.Method == "POST" {
-					handleNewIssueSubmit(db, uint64(projectNo), w, r)
+					handleNewIssueSubmit(ctx, w, r)
 				}
 			},
 		)
 	}
 }
 
-func renderIssueCreateForm(db *badger.DB, projectNo uint64, w http.ResponseWriter, r *http.Request) {
-	projectTags, err := tag.List(db, projectNo)
+func renderIssueCreateForm(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	db := getDbFromContext(ctx)
+	projectObj := getProjectFromContext(ctx)
+
+	projectTags, err := tag.List(db, projectObj.GetNumber())
 	if err != nil {
 		logrus.WithError(err).Warn("error loading tags")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -42,13 +43,16 @@ func renderIssueCreateForm(db *badger.DB, projectNo uint64, w http.ResponseWrite
 	}
 
 	if r.Header.Get("HX-Request") != "" {
-		pages.IssueCreateBody(projectNo, projectTags).Render(r.Context(), w)
+		pages.IssueCreateBody(projectObj.GetNumber(), projectTags).Render(r.Context(), w)
 	} else {
-		pages.IssueCreate(projectNo, projectTags).Render(r.Context(), w)
+		pages.IssueCreate(projectObj.GetNumber(), projectTags).Render(r.Context(), w)
 	}
 }
 
-func handleNewIssueSubmit(db *badger.DB, projectNo uint64, w http.ResponseWriter, r *http.Request) {
+func handleNewIssueSubmit(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	db := getDbFromContext(ctx)
+	projectObj := getProjectFromContext(ctx)
+
 	r.ParseForm()
 	issueTitle := r.Form.Get("title")
 	if issueTitle == "" {
@@ -71,7 +75,7 @@ func handleNewIssueSubmit(db *badger.DB, projectNo uint64, w http.ResponseWriter
 	tagStrNos := r.Form["tag"]
 	tagNos := StrToIntSlice[uint64](tagStrNos)
 
-	if err := issues.Create(db, projectNo, &pb_issue.Issue{
+	if err := issues.Create(db, projectObj.GetNumber(), &pb_issue.Issue{
 		Title:      issueTitle,
 		Body:       r.Form.Get("body"),
 		Category:   pb_issue.IssueCategory(catInt),
@@ -83,7 +87,7 @@ func handleNewIssueSubmit(db *badger.DB, projectNo uint64, w http.ResponseWriter
 	}
 
 	header := w.Header()
-	header.Set("HX-Push-Url", fmt.Sprintf("/project/%d/issues", projectNo))
+	header.Set("HX-Push-Url", fmt.Sprintf("/project/%d/issues", projectObj.GetNumber()))
 	header.Set("HX-Retarget", "body")
 	HandleIssueList(db)(w, r)
 }

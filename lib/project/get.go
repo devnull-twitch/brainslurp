@@ -10,15 +10,9 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-type ListItem struct {
-	No     uint64
-	Name   string
-	Public bool
-}
-
-func Get(db *badger.DB, no uint64) (ListItem, error) {
+func Get(db *badger.DB, no uint64) (*pb_project.Project, error) {
 	if no <= 0 {
-		return ListItem{}, fmt.Errorf("invalid project number")
+		return nil, fmt.Errorf("invalid project number")
 	}
 
 	projectKey := make([]byte, binary.MaxVarintLen64+1)
@@ -43,12 +37,8 @@ func Get(db *badger.DB, no uint64) (ListItem, error) {
 
 		return nil
 	}); err != nil {
-		return ListItem{}, fmt.Errorf("error getting project: %w", err)
+		return nil, fmt.Errorf("error getting project: %w", err)
 	}
 
-	return ListItem{
-		No:     project.GetNumber(),
-		Name:   project.GetName(),
-		Public: project.GetPublic(),
-	}, nil
+	return project, nil
 }

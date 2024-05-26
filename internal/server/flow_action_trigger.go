@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"net/http"
 	"slices"
 	"strconv"
@@ -11,7 +12,9 @@ import (
 	pb_flow "github.com/devnull-twitch/brainslurp/lib/proto/flow"
 	pb_issue "github.com/devnull-twitch/brainslurp/lib/proto/issue"
 	pb_tag "github.com/devnull-twitch/brainslurp/lib/proto/tag"
+	pb_user "github.com/devnull-twitch/brainslurp/lib/proto/user"
 	"github.com/devnull-twitch/brainslurp/lib/tag"
+	"github.com/devnull-twitch/brainslurp/lib/user"
 	"github.com/dgraph-io/badger/v4"
 	"github.com/sirupsen/logrus"
 )
@@ -22,10 +25,13 @@ func HandleFlowActionTrigger(db *badger.DB) func(http.ResponseWriter, *http.Requ
 			db, w, r,
 			authUserWithProjectNo,
 			checkIssueNumber,
-			func(db *badger.DB, w http.ResponseWriter, r *http.Request, next nextCall) {
-				projectNo, _ := strconv.Atoi(r.PathValue("projectNo"))
-				flowNo, _ := strconv.Atoi(r.PathValue("flowNumber"))
-				issueNo, _ := strconv.Atoi(r.PathValue("issueNo"))
+			checkFlowNumber,
+			func(ctx context.Context, w http.ResponseWriter, r *http.Request, next nextCall) {
+				db := getDbFromContext(ctx)
+				projectObj := getProjectFromContext(ctx)
+				issueObj := getIssueFromContext(ctx)
+				issueFlows := getIssueFlowsFromContext(ctx)
+				flowObj := getFlowFromContext(ctx)
 
 				actionIndex, err := strconv.Atoi(r.PathValue("actionIndex"))
 				if err != nil {
@@ -38,14 +44,13 @@ func HandleFlowActionTrigger(db *badger.DB) func(http.ResponseWriter, *http.Requ
 					return
 				}
 
-				issueObj, issueFlows, _ := issues.Get(db, uint64(projectNo), uint64(issueNo))
 				for _, connectedFlow := range issueFlows {
-					if connectedFlow.GetNumber() == uint64(flowNo) {
+					if connectedFlow.GetNumber() == flowObj.GetNumber() {
 						flowAction := connectedFlow.GetActions()[actionIndex]
 
 						processFlow(flowAction, issueObj)
 
-						modIssue, issueFlows, err := issues.Update(db, uint64(projectNo), issueObj)
+						modIssue, issueFlows, err := issues.Update(db, projectObj.GetNumber(), issueObj)
 						if err != nil {
 							logrus.WithError(err).Warn("error updating issue")
 							w.WriteHeader(http.StatusInternalServerError)
@@ -54,7 +59,7 @@ func HandleFlowActionTrigger(db *badger.DB) func(http.ResponseWriter, *http.Requ
 						}
 
 						tagMap := make(map[uint64]*pb_tag.Tag)
-						tagList, err := tag.GetMany(db, uint64(projectNo), issueObj.TagNumbers)
+						tagList, err := tag.GetMany(db, projectObj.GetNumber(), issueObj.TagNumbers)
 						if err != nil {
 							pages.Error("Error loading issues").Render(r.Context(), w)
 							return
@@ -63,9 +68,23 @@ func HandleFlowActionTrigger(db *badger.DB) func(http.ResponseWriter, *http.Requ
 							tagMap[tagObj.GetNumber()] = tagObj
 						}
 
+						userNos := make([]uint64, len(projectObj.GetMembers()))
+						for i, membership := range projectObj.GetMembers() {
+							userNos[i] = membership.GetUserNo()
+						}
+						projectUsers, err := user.List(db, userNos)
+						if err != nil {
+							pages.Error("Error loading users").Render(r.Context(), w)
+							return
+						}
+						userMap := make(map[uint64]*pb_user.User)
+						for _, memberUserObj := range projectUsers {
+							userMap[memberUserObj.GetNumber()] = memberUserObj
+						}
+
 						w.WriteHeader(http.StatusOK)
 						if r.Header.Get("HX-Request") != "" {
-							shared.IssueRow(uint64(projectNo), modIssue, issueFlows, tagMap).Render(r.Context(), w)
+							shared.IssueRow(projectObj.GetNumber(), modIssue, issueFlows, tagMap, userMap).Render(r.Context(), w)
 						}
 						return
 					}
@@ -96,8 +115,9 @@ func processFlow(flowAction *pb_flow.FlowActions, issue *pb_issue.Issue) {
 	issue.TagNumbers = newTags
 }
 
-func checkIssueNumber(db *badger.DB, w http.ResponseWriter, r *http.Request, next nextCall) {
-	projectNo, _ := strconv.Atoi(r.PathValue("projectNo"))
+func checkIssueNumber(ctx context.Context, w http.ResponseWriter, r *http.Request, next nextCall) {
+	db := getDbFromContext(ctx)
+	projectObj := getProjectFromContext(ctx)
 
 	issueNo, err := strconv.Atoi(r.PathValue("issueNo"))
 	if err != nil {
@@ -109,11 +129,12 @@ func checkIssueNumber(db *badger.DB, w http.ResponseWriter, r *http.Request, nex
 		return
 	}
 
-	if _, _, err := issues.Get(db, uint64(projectNo), uint64(issueNo)); err != nil {
+	issueObj, issueFlows, err := issues.Get(db, projectObj.GetNumber(), uint64(issueNo))
+	if err != nil {
 		logrus.WithError(err).Warn("error loading issue")
 		pages.Error("Error parsing URL").Render(r.Context(), w)
 		return
 	}
 
-	next()
+	next(setIssueFlowsOnContext(setIssueOnContext(ctx, issueObj), issueFlows))
 }

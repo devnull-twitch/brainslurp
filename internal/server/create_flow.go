@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -19,44 +20,39 @@ func HandleFlowCreate(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 		walkChain(
 			db, w, r,
 			authUserWithProjectNo,
-			func(db *badger.DB, w http.ResponseWriter, r *http.Request, next nextCall) {
-				// projectNo is already validated by authUserWithProjectNo so we dont need to error check again
-				projectNo, _ := strconv.Atoi(r.PathValue("projectNo"))
-
+			func(ctx context.Context, w http.ResponseWriter, r *http.Request, next nextCall) {
 				if r.Method == "GET" {
-					renderFlowCreateForm(db, uint64(projectNo), w, r)
+					renderFlowCreateForm(ctx, w, r)
 				}
 				if r.Method == "POST" {
-					handleNewFlowSubmit(db, uint64(projectNo), w, r)
+					handleNewFlowSubmit(ctx, w, r)
 				}
 			},
 		)
 	}
 }
 
-func renderFlowCreateForm(db *badger.DB, projectNo uint64, w http.ResponseWriter, r *http.Request) {
-	tagList, err := tag.List(db, projectNo)
+func renderFlowCreateForm(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	db := getDbFromContext(ctx)
+	projectObj := getProjectFromContext(ctx)
+	tagList, err := tag.List(db, projectObj.GetNumber())
 	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"error":      err,
-			"path_value": "projectNo",
-		}).Warn("error inserting new flow")
+		logrus.WithError(err).Warn("error loading tags")
 		w.WriteHeader(http.StatusInternalServerError)
-		pages.Error("Error inserting flow").Render(r.Context(), w)
+		pages.Error("Internal System Error").Render(r.Context(), w)
 	}
 
 	if r.Header.Get("HX-Request") != "" {
-		pages.FlowFormBody(projectNo, nil, tagList).Render(r.Context(), w)
+		pages.FlowFormBody(projectObj.GetNumber(), nil, tagList).Render(r.Context(), w)
 	} else {
-		pages.FlowForm(projectNo, nil, tagList).Render(r.Context(), w)
+		pages.FlowForm(projectObj.GetNumber(), nil, tagList).Render(r.Context(), w)
 	}
 }
 
-func handleNewFlowSubmit(
-	db *badger.DB,
-	projectNo uint64,
-	w http.ResponseWriter, r *http.Request,
-) {
+func handleNewFlowSubmit(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	db := getDbFromContext(ctx)
+	projectObj := getProjectFromContext(ctx)
+
 	newFlow, err := parseFormFlow(r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -65,7 +61,7 @@ func handleNewFlowSubmit(
 	}
 
 	_, err = flows.Create(db, flows.CreateOptions{
-		ProjectNo:    projectNo,
+		ProjectNo:    projectObj.GetNumber(),
 		Title:        newFlow.GetTitle(),
 		Requirements: newFlow.GetRequirements(),
 		Actions:      newFlow.GetActions(),
@@ -79,7 +75,7 @@ func handleNewFlowSubmit(
 		pages.Error("Error inserting flow").Render(r.Context(), w)
 	}
 
-	flows, err := flows.List(db, uint64(projectNo))
+	flows, err := flows.List(db, projectObj.GetNumber())
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"error":      err,
@@ -91,7 +87,7 @@ func handleNewFlowSubmit(
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	pages.FlowListBody(projectNo, flows).Render(r.Context(), w)
+	pages.FlowListBody(projectObj.GetNumber(), flows).Render(r.Context(), w)
 }
 
 func handleInputErr(

@@ -6,6 +6,7 @@ import pb_issue "github.com/devnull-twitch/brainslurp/lib/proto/issue"
 import pb_flow "github.com/devnull-twitch/brainslurp/lib/proto/flow"
 import pb_view "github.com/devnull-twitch/brainslurp/lib/proto/view"
 import pb_tag "github.com/devnull-twitch/brainslurp/lib/proto/tag"
+import pb_user "github.com/devnull-twitch/brainslurp/lib/proto/user" 
 
 func makeIssuesFilterPath(projectNo uint64, viewNo uint64) templ.SafeURL {
 	return templ.URL(fmt.Sprintf("/project/%d/issues/view/%d", projectNo, viewNo))
@@ -25,11 +26,12 @@ templ List(
 	mapFlowToIssue map[uint64][]*pb_flow.Flow,
 	views []*pb_view.View,
 	tagMap map[uint64]*pb_tag.Tag,
+	userMap map[uint64]*pb_user.User,
 ) {
 	<html>
 		@header("Issue list")
 		@body(projectNo) {
-			@ListBody(projectNo, issues, mapFlowToIssue, views, tagMap)
+			@ListBody(projectNo, issues, mapFlowToIssue, views, tagMap, userMap)
 		}
 	</html>
 }
@@ -40,6 +42,7 @@ templ ListBody(
 	mapFlowToIssue map[uint64][]*pb_flow.Flow,
 	views []*pb_view.View,
 	tagMap map[uint64]*pb_tag.Tag,
+	userMap map[uint64]*pb_user.User,
 ) {
 	<div class="container mx-auto">
 		<h2 class="text-2xl underline pb-4">Issues</h2>
@@ -85,7 +88,7 @@ templ ListBody(
 			</div>
 		</div>
 		<div id="issue-list">
-			@ListItems(projectNo, issues, mapFlowToIssue, tagMap)
+			@ListItems(projectNo, issues, mapFlowToIssue, tagMap, userMap)
 		</div>
 	</div>
 }
@@ -95,10 +98,11 @@ templ ListItems(
 	issues []*pb_issue.Issue,
 	mapFlowToIssue map[uint64][]*pb_flow.Flow,
 	tagMap map[uint64]*pb_tag.Tag,
+	userMap map[uint64]*pb_user.User,
 ) {
 	<div class="flex flex-col">
 	for _, issue := range issues {
-		@shared.IssueRow(projectNo, issue, mapFlowToIssue[issue.GetNumber()], tagMap)
+		@shared.IssueRow(projectNo, issue, mapFlowToIssue[issue.GetNumber()], tagMap, userMap)
 	}
 	</div>
 }

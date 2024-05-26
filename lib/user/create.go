@@ -1,9 +1,7 @@
 package user
 
 import (
-	"encoding/binary"
 	"fmt"
-	"time"
 
 	"github.com/devnull-twitch/brainslurp/lib/database"
 	pb_user "github.com/devnull-twitch/brainslurp/lib/proto/user"
@@ -18,33 +16,27 @@ type CreateOptions struct {
 	Password string
 }
 
-func Create(db *badger.DB, opts CreateOptions) (uint64, error) {
+func Create(db *badger.DB, password string, newUserObj *pb_user.User) (uint64, error) {
 	userNo, err := database.NextNumber(db, database.UserSequenceKey)
 	if err != nil {
 		return 0, fmt.Errorf("error getting new user number: %w", err)
 	}
+	newUserObj.Number = userNo
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(opts.Password), 12)
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), 12)
 	if err != nil {
 		return 0, fmt.Errorf("error hasing password: %w", err)
 	}
+	newUserObj.PasswordHash = hash
 
-	userKey := make([]byte, binary.MaxVarintLen64+1)
-	userKey[0] = database.UserPrefix
-	binary.PutUvarint(userKey[1:], userNo)
-
-	userVal, err := proto.Marshal(&pb_user.User{
-		Number:       userNo,
-		CreatedAt:    time.Now().Unix(),
-		Name:         opts.Username,
-		PasswordHash: hash,
-	})
+	userKey := database.Keygen(database.UserPrefix, userNo)
+	userVal, err := proto.Marshal(newUserObj)
 	if err != nil {
 		return 0, fmt.Errorf("unable to marshal user: %w", err)
 	}
 
 	if err := db.Update(func(txn *badger.Txn) error {
-		usernameBytes := []byte(opts.Username)
+		usernameBytes := []byte(newUserObj.Name)
 		usernameKey := make([]byte, len(usernameBytes)+1)
 		usernameKey[0] = database.UsernameLookupPrefix
 		copy(usernameKey[1:], usernameBytes)

@@ -1,0 +1,37 @@
+package shared
+
+import "fmt"
+
+import pb_user "github.com/devnull-twitch/brainslurp/lib/proto/user" 
+
+type UserOptions struct {
+  IdPrefix string
+  UnassignURL templ.SafeURL
+}
+
+func makeUserID(prefix string, userNo uint64) string {
+  return fmt.Sprintf("%s-user-%d", prefix, userNo)
+}
+
+templ User(user *pb_user.User, opts UserOptions) {
+  <span
+    class="px-2 border rounded-full bg-yellow-200"
+    if opts.IdPrefix != "" {
+      id={ makeUserID(opts.IdPrefix, user.GetNumber()) }
+    }
+  >
+    if user != nil {
+      { user.GetName() }
+    } else {
+      System
+    }
+    if opts.UnassignURL != "" {
+      @HxLink(opts.UnassignURL, makeUserID(opts.IdPrefix, user.GetNumber()), HxLinkOptions{
+        Method: "delete",
+        Swap: "outerHTML",
+      }) {
+        @Codicon("trash", true)
+      }
+    }
+  </span>
+}

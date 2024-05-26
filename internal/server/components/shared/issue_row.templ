@@ -9,6 +9,9 @@ import "github.com/yuin/goldmark"
 import pb_issue "github.com/devnull-twitch/brainslurp/lib/proto/issue"
 import pb_flow "github.com/devnull-twitch/brainslurp/lib/proto/flow"
 import pb_tag "github.com/devnull-twitch/brainslurp/lib/proto/tag"
+import pb_user "github.com/devnull-twitch/brainslurp/lib/proto/user" 
+
+//TODO: Move this to pages package as it isnt shared at all 
 
 func makeIssueRowID(no uint64) string {
   return fmt.Sprintf("issue-no-%d", no)
@@ -48,6 +51,10 @@ func makeFlowActionURL(projectNo uint64, issueNo uint64, flowNo uint64, actionIn
   return templ.URL(fmt.Sprintf("/project/%d/issue/%d/flow/%d/action/%d", projectNo, issueNo, flowNo, actionIndex))
 }
 
+func makeUnassignActionURL(projectNo uint64, issueNo uint64, userNo uint64) templ.SafeURL {
+  return templ.URL(fmt.Sprintf("/project/%d/issue/%d/unassign/%d", projectNo, issueNo, userNo))
+}
+
 func renderIssueBody(bodyStr string) string {
   out := &strings.Builder{}
   if err := goldmark.Convert([]byte(bodyStr), out); err != nil {
@@ -56,6 +63,10 @@ func renderIssueBody(bodyStr string) string {
   }
 
   return out.String()
+}
+
+func makeUserPrefix(issueNo uint64) string {
+  return fmt.Sprintf("issue-%d", issueNo)
 }
 
 script onContainerClick(containerId string) {
@@ -81,6 +92,7 @@ templ IssueRow(
   issue *pb_issue.Issue,
   issueFlows []*pb_flow.Flow,
   tagMap map[uint64]*pb_tag.Tag,
+  userMap map[uint64]*pb_user.User,
 ) {
   <div class="bg-white even:bg-stone-100 first:rounded-t-lg last:rounded-b-lg" id={ makeIssueRowID(issue.GetNumber()) }>
     <div class="px-2 py-0.5 flex items-center" onclick={ onContainerClick(makeIssueRowID(issue.GetNumber())) }>
@@ -107,6 +119,17 @@ templ IssueRow(
 
       <!-- TITLE -->
       <span class="flex-1">{ issue.GetTitle() }</span>
+
+      if len(issue.GetAssignedTo()) > 0 {
+        <div class="flex-initial flex gap-1 mr-2">
+        for _, assigneUserNo := range issue.GetAssignedTo() {
+          @User(userMap[assigneUserNo], UserOptions{
+            IdPrefix: makeUserPrefix(issue.GetNumber()),
+            UnassignURL: makeUnassignActionURL(projectNo, issue.GetNumber(), assigneUserNo),
+          })
+        }
+        </div>
+      }
 
       <!-- TAGS -->
       <div class="flex flex-initial mr-8">
@@ -155,7 +178,7 @@ templ IssueRow(
         </p>
         <p class="flex-initial text-sm">
           by
-          UserA
+          @User(userMap[issue.GetCreatedBy()], UserOptions{})
         </p>
       </div>
       
@@ -202,12 +225,17 @@ templ IssueRow(
       <!-- Activity feed -->
       if len(issue.GetActivities()) > 0 {
         <div class="flex flex-col mx-10 mb-10 gap-2">
-          <h2 class="text-xl italic underline ml-5">Activity feed</h2>
+          <h2 class="text-xl italic underline ml-2">
+            @Codicon("comment-discussion", false)
+            Activity feed
+          </h2>
           for _, issueActivity := range issue.GetActivities() {
             <article class="bg-slate-200 rounded-xl border">
               <header class="px-5 py-2">
                 <div class="flex items-center justify-between">
-                  <h3 class="text-lg">User</h3>
+                  <h3 class="text-lg">
+                    @User(userMap[issueActivity.GetTriggerUser()], UserOptions{})
+                  </h3>
                   @Time(issueActivity.GetCreatedAt(), TimeOptions{})
                 </div>
                 <hr class="my-2 border-white" />

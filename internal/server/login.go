@@ -7,6 +7,7 @@ import (
 
 	"github.com/devnull-twitch/brainslurp/internal/server/components/pages"
 	"github.com/devnull-twitch/brainslurp/lib/project"
+	pb_project "github.com/devnull-twitch/brainslurp/lib/proto/project"
 	"github.com/devnull-twitch/brainslurp/lib/user"
 	"github.com/dgraph-io/badger/v4"
 	"github.com/golang-jwt/jwt/v5"
@@ -47,7 +48,7 @@ func LoginHandler(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 				Value: tokenStr,
 			})
 
-			projects := make([]project.ListItem, len(userObj.Projects))
+			projects := make([]*pb_project.Project, len(userObj.Projects))
 			for i, projectNo := range userObj.Projects {
 				projects[i], err = project.Get(db, projectNo)
 				if err != nil {

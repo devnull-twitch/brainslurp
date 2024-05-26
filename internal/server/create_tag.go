@@ -1,9 +1,9 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/devnull-twitch/brainslurp/internal/server/components/pages"
 	pb_tag "github.com/devnull-twitch/brainslurp/lib/proto/tag"
@@ -17,34 +17,32 @@ func HandleTagCreate(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 		walkChain(
 			db, w, r,
 			authUserWithProjectNo,
-			func(db *badger.DB, w http.ResponseWriter, r *http.Request, next nextCall) {
-				// projectNo is already validated by authUserWithProjectNo so we dont need to error check again
-				projectNo, _ := strconv.Atoi(r.PathValue("projectNo"))
-
+			func(ctx context.Context, w http.ResponseWriter, r *http.Request, next nextCall) {
 				if r.Method == "GET" {
-					renderTagCreateForm(uint64(projectNo), w, r)
+					renderTagCreateForm(ctx, w, r)
 				}
 				if r.Method == "POST" {
-					handleNewTagSubmit(db, uint64(projectNo), w, r)
+					handleNewTagSubmit(ctx, w, r)
 				}
 			},
 		)
 	}
 }
 
-func renderTagCreateForm(projectNo uint64, w http.ResponseWriter, r *http.Request) {
+func renderTagCreateForm(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	projectObj := getProjectFromContext(ctx)
+
 	if r.Header.Get("HX-Request") != "" {
-		pages.TagCreateBody(projectNo).Render(r.Context(), w)
+		pages.TagCreateBody(projectObj.GetNumber()).Render(r.Context(), w)
 	} else {
-		pages.TagCreate(projectNo).Render(r.Context(), w)
+		pages.TagCreate(projectObj.GetNumber()).Render(r.Context(), w)
 	}
 }
 
-func handleNewTagSubmit(
-	db *badger.DB,
-	projectNo uint64,
-	w http.ResponseWriter, r *http.Request,
-) {
+func handleNewTagSubmit(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	db := getDbFromContext(ctx)
+	projectObj := getProjectFromContext(ctx)
+
 	r.ParseForm()
 	tagTitle := r.Form.Get("title")
 	if tagTitle == "" {
@@ -52,7 +50,7 @@ func handleNewTagSubmit(
 		return
 	}
 
-	if _, err := tag.Create(db, projectNo, &pb_tag.Tag{
+	if _, err := tag.Create(db, projectObj.GetNumber(), &pb_tag.Tag{
 		Title:    tagTitle,
 		HexColor: r.Form.Get("color"),
 	}); err != nil {

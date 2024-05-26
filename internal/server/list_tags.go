@@ -1,8 +1,8 @@
 package server
 
 import (
+	"context"
 	"net/http"
-	"strconv"
 
 	"github.com/devnull-twitch/brainslurp/internal/server/components/pages"
 	"github.com/devnull-twitch/brainslurp/lib/tag"
@@ -15,9 +15,10 @@ func HandleTagsListing(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 		walkChain(
 			db, w, r,
 			authUserWithProjectNo,
-			func(db *badger.DB, w http.ResponseWriter, r *http.Request, next nextCall) {
-				projectNo, _ := strconv.Atoi(r.PathValue("projectNo"))
-				tagList, err := tag.List(db, uint64(projectNo))
+			func(ctx context.Context, w http.ResponseWriter, r *http.Request, next nextCall) {
+				projectObj := getProjectFromContext(ctx)
+
+				tagList, err := tag.List(db, projectObj.GetNumber())
 				if err != nil {
 					logrus.WithError(err).Warn("error loading tag list")
 					w.WriteHeader(http.StatusInternalServerError)
@@ -26,14 +27,14 @@ func HandleTagsListing(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 				}
 
 				if r.Header.Get("HX-Request") != "" {
-					pages.BodyLogoOOB(uint64(projectNo)).Render(r.Context(), w)
+					pages.BodyLogoOOB(projectObj.GetNumber()).Render(r.Context(), w)
 					if r.Header.Get("HX-Target") == "flow-list" {
 						pages.TagListItems(tagList).Render(r.Context(), w)
 					} else {
-						pages.TagListingBody(uint64(projectNo), tagList).Render(r.Context(), w)
+						pages.TagListingBody(projectObj.GetNumber(), tagList).Render(r.Context(), w)
 					}
 				} else {
-					pages.TagListing(uint64(projectNo), tagList).Render(r.Context(), w)
+					pages.TagListing(projectObj.GetNumber(), tagList).Render(r.Context(), w)
 				}
 			},
 		)

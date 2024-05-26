@@ -1,7 +1,6 @@
 package user
 
 import (
-	"encoding/binary"
 	"fmt"
 
 	"github.com/devnull-twitch/brainslurp/lib/database"
@@ -11,7 +10,7 @@ import (
 )
 
 func AddProject(db *badger.DB, userNo uint64, projectNo uint64) error {
-	userObj, err := getProtoUser(db, userNo)
+	userObj, err := Get(db, userNo)
 	if err != nil {
 		return fmt.Errorf("unable to get user for update: %w", err)
 	}
@@ -20,9 +19,7 @@ func AddProject(db *badger.DB, userNo uint64, projectNo uint64) error {
 		ProjectNo: projectNo,
 	})
 
-	userKey := make([]byte, binary.MaxVarintLen64+1)
-	userKey[0] = database.UserPrefix
-	binary.PutUvarint(userKey[1:], userNo)
+	userKey := database.Keygen(database.UserPrefix, userNo)
 
 	userVal, err := proto.Marshal(userObj)
 	if err != nil {

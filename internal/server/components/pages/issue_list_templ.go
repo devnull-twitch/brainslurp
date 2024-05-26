@@ -16,6 +16,7 @@ import pb_issue "github.com/devnull-twitch/brainslurp/lib/proto/issue"
 import pb_flow "github.com/devnull-twitch/brainslurp/lib/proto/flow"
 import pb_view "github.com/devnull-twitch/brainslurp/lib/proto/view"
 import pb_tag "github.com/devnull-twitch/brainslurp/lib/proto/tag"
+import pb_user "github.com/devnull-twitch/brainslurp/lib/proto/user"
 
 func makeIssuesFilterPath(projectNo uint64, viewNo uint64) templ.SafeURL {
 	return templ.URL(fmt.Sprintf("/project/%d/issues/view/%d", projectNo, viewNo))
@@ -35,6 +36,7 @@ func List(
 	mapFlowToIssue map[uint64][]*pb_flow.Flow,
 	views []*pb_view.View,
 	tagMap map[uint64]*pb_tag.Tag,
+	userMap map[uint64]*pb_user.User,
 ) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
@@ -62,7 +64,7 @@ func List(
 				templ_7745c5c3_Buffer = templ.GetBuffer()
 				defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 			}
-			templ_7745c5c3_Err = ListBody(projectNo, issues, mapFlowToIssue, views, tagMap).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = ListBody(projectNo, issues, mapFlowToIssue, views, tagMap, userMap).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -92,6 +94,7 @@ func ListBody(
 	mapFlowToIssue map[uint64][]*pb_flow.Flow,
 	views []*pb_view.View,
 	tagMap map[uint64]*pb_tag.Tag,
+	userMap map[uint64]*pb_user.User,
 ) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
@@ -144,7 +147,7 @@ func ListBody(
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(view.Title)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/issue_list.templ`, Line: 65, Col: 18}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/issue_list.templ`, Line: 68, Col: 18}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
@@ -221,7 +224,7 @@ func ListBody(
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = ListItems(projectNo, issues, mapFlowToIssue, tagMap).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = ListItems(projectNo, issues, mapFlowToIssue, tagMap, userMap).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -241,6 +244,7 @@ func ListItems(
 	issues []*pb_issue.Issue,
 	mapFlowToIssue map[uint64][]*pb_flow.Flow,
 	tagMap map[uint64]*pb_tag.Tag,
+	userMap map[uint64]*pb_user.User,
 ) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
@@ -259,7 +263,7 @@ func ListItems(
 			return templ_7745c5c3_Err
 		}
 		for _, issue := range issues {
-			templ_7745c5c3_Err = shared.IssueRow(projectNo, issue, mapFlowToIssue[issue.GetNumber()], tagMap).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = shared.IssueRow(projectNo, issue, mapFlowToIssue[issue.GetNumber()], tagMap, userMap).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

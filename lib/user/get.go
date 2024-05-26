@@ -10,25 +10,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func Get(db *badger.DB, no uint64) (User, error) {
-	user, err := getProtoUser(db, no)
-	if err != nil {
-		return User{}, err
-	}
-
-	projectNos := make([]uint64, len(user.GetMemberships()))
-	for i, projectEntry := range user.GetMemberships() {
-		projectNos[i] = projectEntry.GetProjectNo()
-	}
-
-	return User{
-		Number:   user.GetNumber(),
-		Username: user.GetName(),
-		Projects: projectNos,
-	}, nil
-}
-
-func getProtoUser(db *badger.DB, no uint64) (*pb_user.User, error) {
+func Get(db *badger.DB, no uint64) (*pb_user.User, error) {
 	user := &pb_user.User{}
 	if err := db.View(func(txn *badger.Txn) error {
 		userKey := make([]byte, binary.MaxVarintLen64+1)

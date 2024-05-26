@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
@@ -11,8 +12,9 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func checkFlowNumber(db *badger.DB, w http.ResponseWriter, r *http.Request, next nextCall) {
-	projectNo, _ := strconv.Atoi(r.PathValue("projectNo"))
+func checkFlowNumber(ctx context.Context, w http.ResponseWriter, r *http.Request, next nextCall) {
+	db := getDbFromContext(ctx)
+	projectObj := getProjectFromContext(ctx)
 
 	flowNo, err := strconv.Atoi(r.PathValue("flowNumber"))
 	if err != nil {
@@ -24,13 +26,14 @@ func checkFlowNumber(db *badger.DB, w http.ResponseWriter, r *http.Request, next
 		return
 	}
 
-	if _, err := flows.Get(db, uint64(projectNo), uint64(flowNo)); err != nil {
+	flowObj, err := flows.Get(db, projectObj.GetNumber(), uint64(flowNo))
+	if err != nil {
 		logrus.WithError(err).Warn("error loading flow for edit")
 		pages.Error("Error parsing URL").Render(r.Context(), w)
 		return
 	}
 
-	next()
+	next(setFlowOnContext(ctx, flowObj))
 }
 
 func HandleFlowEdit(db *badger.DB) func(http.ResponseWriter, *http.Request) {
@@ -39,7 +42,7 @@ func HandleFlowEdit(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 			db, w, r,
 			authUserWithProjectNo,
 			checkFlowNumber,
-			func(db *badger.DB, w http.ResponseWriter, r *http.Request, next nextCall) {
+			func(ctx context.Context, w http.ResponseWriter, r *http.Request, next nextCall) {
 				projectNo, _ := strconv.Atoi(r.PathValue("projectNo"))
 				flowNo, _ := strconv.Atoi(r.PathValue("flowNumber"))
 

@@ -10,6 +10,7 @@ import (
 	pb_flow "github.com/devnull-twitch/brainslurp/lib/proto/flow"
 	pb_issue "github.com/devnull-twitch/brainslurp/lib/proto/issue"
 	pb_tag "github.com/devnull-twitch/brainslurp/lib/proto/tag"
+	pb_user "github.com/devnull-twitch/brainslurp/lib/proto/user"
 	"github.com/devnull-twitch/brainslurp/lib/tag"
 	"github.com/devnull-twitch/brainslurp/lib/user"
 	"github.com/devnull-twitch/brainslurp/lib/view"
@@ -25,24 +26,45 @@ func main() {
 	}
 	defer db.Close()
 
-	userNo, err := user.Create(db, user.CreateOptions{
-		Username: "devnull@brainslurp",
-		Password: "testing",
+	userNo, err := user.Create(db, "testing", &pb_user.User{
+		Name:        "devnull@brainslurp",
+		CreatedAt:   time.Now().Unix(),
+		Memberships: []*pb_user.Membership{},
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	secondUserNo, err := user.Create(db, "testing", &pb_user.User{
+		Name:        "second@brainslurp",
+		CreatedAt:   time.Now().Unix(),
+		Memberships: []*pb_user.Membership{},
 	})
 	if err != nil {
 		panic(err)
 	}
 
 	projectNo, err := project.Create(db, project.CreateOptions{
-		Title:         "Brainslurp Dev",
-		Public:        false,
-		CreatorUserNo: userNo,
+		Title:  "Brainslurp Dev",
+		Public: false,
 	})
 	if err != nil {
 		panic(err)
 	}
 
 	err = user.AddProject(db, userNo, projectNo)
+	if err != nil {
+		panic(err)
+	}
+	err = user.AddProject(db, secondUserNo, projectNo)
+	if err != nil {
+		panic(err)
+	}
+	project.AddUser(db, userNo, projectNo)
+	if err != nil {
+		panic(err)
+	}
+	project.AddUser(db, secondUserNo, projectNo)
 	if err != nil {
 		panic(err)
 	}
@@ -97,6 +119,8 @@ func main() {
 
 	if err := issues.Create(db, projectNo, &pb_issue.Issue{
 		Title:      "Test no1",
+		CreatedBy:  userNo,
+		AssignedTo: []uint64{userNo},
 		Category:   pb_issue.IssueCategory_Bug,
 		TagNumbers: []uint64{testTagNo},
 	}); err != nil {
@@ -104,17 +128,21 @@ func main() {
 	}
 	if err := issues.Create(db, projectNo, &pb_issue.Issue{
 		Title:      "Test no2",
+		CreatedBy:  userNo,
 		Body:       "We might *want* this feature but we dont *need* it.",
 		Category:   pb_issue.IssueCategory_Feature,
 		TagNumbers: []uint64{testTagNo},
+		AssignedTo: []uint64{secondUserNo},
 	}); err != nil {
 		panic(err)
 	}
 	if err := issues.Create(db, projectNo, &pb_issue.Issue{
 		Title:      "Test no3",
+		CreatedBy:  userNo,
 		CreatedAt:  time.Now().Add(-time.Hour * 50).Unix(),
 		Category:   pb_issue.IssueCategory_Feature,
 		TagNumbers: []uint64{},
+		AssignedTo: []uint64{userNo, secondUserNo},
 		Body:       "We **really** need this top notch feature.",
 		Views: []*pb_issue.ViewStatus{
 			{Number: viewNo, SetAt: time.Now().Unix()},
@@ -141,6 +169,7 @@ func main() {
 	}
 	if err := issues.Create(db, projectNo, &pb_issue.Issue{
 		Title:      "Test no4",
+		CreatedBy:  userNo,
 		Category:   pb_issue.IssueCategory_Question,
 		TagNumbers: []uint64{replaceTagNo},
 	}); err != nil {

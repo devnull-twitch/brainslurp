@@ -1,10 +1,10 @@
 package pages
 
-import "github.com/devnull-twitch/brainslurp/lib/project"
 import "github.com/devnull-twitch/brainslurp/internal/server/components/shared"
+import pb_project "github.com/devnull-twitch/brainslurp/lib/proto/project"
 import "fmt"
 
-templ ProjectListing(projects []project.ListItem) {
+templ ProjectListing(projects []*pb_project.Project) {
   <html>
 		@header("My Projects")
     @body(0) {
@@ -25,27 +25,27 @@ func makeTagListURL(no uint64) templ.SafeURL {
   return templ.URL(fmt.Sprintf("/project/%d/tags", no))
 }
 
-templ ProjectListingBody(projects []project.ListItem) {
+templ ProjectListingBody(projects []*pb_project.Project) {
 	<div class="container mx-auto flex">
     for _, projectEntry := range projects {
       <div class="flex flex-col items-center grow-0 shrink bg-white shadow-lg p-8">
-        <h3 class="text-xl mb-8">{ projectEntry.Name }</h3>
+        <h3 class="text-xl mb-8">{ projectEntry.GetName() }</h3>
         <div class="flex justify-between w-full gap-x-4">
-          @shared.HxLink(makeProjectIssueLink(projectEntry.No), "#body-content", shared.HxLinkOptions{
+          @shared.HxLink(makeProjectIssueLink(projectEntry.GetNumber()), "#body-content", shared.HxLinkOptions{
             ButtonOptions: shared.ButtonOptions{Primary: true},
             UseButtonStyle: true,
             PushURL: true,
           }) {
             Show Issues
           }
-          @shared.HxLink(makeFlowListURL(projectEntry.No), "#body-content", shared.HxLinkOptions{
+          @shared.HxLink(makeFlowListURL(projectEntry.GetNumber()), "#body-content", shared.HxLinkOptions{
             ButtonOptions: shared.ButtonOptions{Primary: true},
             UseButtonStyle: true,
             PushURL: true,
           }) {
             Show Flows
           }
-          @shared.HxLink(makeTagListURL(projectEntry.No), "#body-content", shared.HxLinkOptions{
+          @shared.HxLink(makeTagListURL(projectEntry.GetNumber()), "#body-content", shared.HxLinkOptions{
             ButtonOptions: shared.ButtonOptions{Primary: true},
             UseButtonStyle: true,
             PushURL: true,

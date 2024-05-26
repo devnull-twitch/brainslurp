@@ -10,11 +10,11 @@ import "context"
 import "io"
 import "bytes"
 
-import "github.com/devnull-twitch/brainslurp/lib/project"
 import "github.com/devnull-twitch/brainslurp/internal/server/components/shared"
+import pb_project "github.com/devnull-twitch/brainslurp/lib/proto/project"
 import "fmt"
 
-func ProjectListing(projects []project.ListItem) templ.Component {
+func ProjectListing(projects []*pb_project.Project) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 		if !templ_7745c5c3_IsBuffer {
@@ -77,7 +77,7 @@ func makeTagListURL(no uint64) templ.SafeURL {
 	return templ.URL(fmt.Sprintf("/project/%d/tags", no))
 }
 
-func ProjectListingBody(projects []project.ListItem) templ.Component {
+func ProjectListingBody(projects []*pb_project.Project) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 		if !templ_7745c5c3_IsBuffer {
@@ -100,9 +100,9 @@ func ProjectListingBody(projects []project.ListItem) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var4 string
-			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(projectEntry.Name)
+			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(projectEntry.GetName())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/project_list.templ`, Line: 32, Col: 52}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/project_list.templ`, Line: 32, Col: 57}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -127,7 +127,7 @@ func ProjectListingBody(projects []project.ListItem) templ.Component {
 				}
 				return templ_7745c5c3_Err
 			})
-			templ_7745c5c3_Err = shared.HxLink(makeProjectIssueLink(projectEntry.No), "#body-content", shared.HxLinkOptions{
+			templ_7745c5c3_Err = shared.HxLink(makeProjectIssueLink(projectEntry.GetNumber()), "#body-content", shared.HxLinkOptions{
 				ButtonOptions:  shared.ButtonOptions{Primary: true},
 				UseButtonStyle: true,
 				PushURL:        true,
@@ -150,7 +150,7 @@ func ProjectListingBody(projects []project.ListItem) templ.Component {
 				}
 				return templ_7745c5c3_Err
 			})
-			templ_7745c5c3_Err = shared.HxLink(makeFlowListURL(projectEntry.No), "#body-content", shared.HxLinkOptions{
+			templ_7745c5c3_Err = shared.HxLink(makeFlowListURL(projectEntry.GetNumber()), "#body-content", shared.HxLinkOptions{
 				ButtonOptions:  shared.ButtonOptions{Primary: true},
 				UseButtonStyle: true,
 				PushURL:        true,
@@ -173,7 +173,7 @@ func ProjectListingBody(projects []project.ListItem) templ.Component {
 				}
 				return templ_7745c5c3_Err
 			})
-			templ_7745c5c3_Err = shared.HxLink(makeTagListURL(projectEntry.No), "#body-content", shared.HxLinkOptions{
+			templ_7745c5c3_Err = shared.HxLink(makeTagListURL(projectEntry.GetNumber()), "#body-content", shared.HxLinkOptions{
 				ButtonOptions:  shared.ButtonOptions{Primary: true},
 				UseButtonStyle: true,
 				PushURL:        true,

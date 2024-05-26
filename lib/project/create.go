@@ -13,9 +13,8 @@ import (
 )
 
 type CreateOptions struct {
-	Title         string
-	Public        bool
-	CreatorUserNo uint64
+	Title  string
+	Public bool
 }
 
 func Create(db *badger.DB, opts CreateOptions) (uint64, error) {
@@ -33,9 +32,7 @@ func Create(db *badger.DB, opts CreateOptions) (uint64, error) {
 		CreatedAt: time.Now().Unix(),
 		Name:      opts.Title,
 		Public:    opts.Public,
-		Members: []*pb_project.Member{
-			{UserNo: opts.CreatorUserNo},
-		},
+		Members:   []*pb_project.Member{},
 	})
 	if err != nil {
 		return 0, fmt.Errorf("unable to marshal project: %w", err)

@@ -28,7 +28,9 @@ message IssueActivity {
 
 message Issue {
   uint64 number = 1;
+  uint64 created_by = 3;
   int64 created_at = 5;
+  repeated uint64 assigned_to = 8;
   string title = 20;
   string body = 21;
   IssueCategory category = 22;
