@@ -55,6 +55,10 @@ func makeUnassignActionURL(projectNo uint64, issueNo uint64, userNo uint64) temp
   return templ.URL(fmt.Sprintf("/project/%d/issue/%d/unassign/%d", projectNo, issueNo, userNo))
 }
 
+func makeNewCommentURL(projectNo uint64, issueNo uint64) templ.SafeURL {
+  return templ.URL(fmt.Sprintf("/project/%d/issue/%d/comment", projectNo, issueNo))
+}
+
 func renderIssueBody(bodyStr string) string {
   out := &strings.Builder{}
   if err := goldmark.Convert([]byte(bodyStr), out); err != nil {
@@ -67,6 +71,10 @@ func renderIssueBody(bodyStr string) string {
 
 func makeUserPrefix(issueNo uint64) string {
   return fmt.Sprintf("issue-%d", issueNo)
+}
+
+func makeActivityFeedID(issueNo uint64) string {
+  return fmt.Sprintf("activity-feed-%d", issueNo)
 }
 
 script onContainerClick(containerId string) {
@@ -177,7 +185,7 @@ templ IssueRow(
           @Time(issue.GetCreatedAt(), TimeOptions{})
         </p>
         <p class="flex-initial text-sm">
-          by
+          <span class="mr-1">by</span>
           @User(userMap[issue.GetCreatedBy()], UserOptions{})
         </p>
       </div>
@@ -223,31 +231,66 @@ templ IssueRow(
       </div>
 
       <!-- Activity feed -->
-      if len(issue.GetActivities()) > 0 {
-        <div class="flex flex-col mx-10 mb-10 gap-2">
-          <h2 class="text-xl italic underline ml-2">
-            @Codicon("comment-discussion", false)
-            Activity feed
-          </h2>
-          for _, issueActivity := range issue.GetActivities() {
-            <article class="bg-slate-200 rounded-xl border">
-              <header class="px-5 py-2">
-                <div class="flex items-center justify-between">
-                  <h3 class="text-lg">
-                    @User(userMap[issueActivity.GetTriggerUser()], UserOptions{})
-                  </h3>
-                  @Time(issueActivity.GetCreatedAt(), TimeOptions{})
-                </div>
-                <hr class="my-2 border-white" />
-              </header>
-              <div class="px-5 pb-5">
-                <p>{ issueActivity.GetBody() }</p>
-                <hr class="my-2 border-white" />
+      <div class="flex flex-col mx-10 mb-10 gap-2" id={ makeActivityFeedID(issue.GetNumber()) }>
+        <h2 class="text-xl italic underline ml-2">
+          @Codicon("comment-discussion", false)
+          Activity feed
+        </h2>
+        for i := len(issue.GetActivities()) - 1; i > -1; i -= 1  {
+          @CommentBox(issue.GetActivities()[i], userMap)
+        }
+        <article 
+          class="bg-slate-200 rounded-xl border p-5"
+          x-data="{ open: false }"
+          x-init={ `$watch('open', value => {
+              if (open) {
+                  htmx.process(document.querySelector('#` + makeActivityFeedID(issue.GetNumber()) + `'))
+              }
+          })` }
+        >
+          <template x-if="open">
+            <form 
+              hx-post={ string(makeNewCommentURL(projectNo, issue.GetNumber())) }
+              hx-target={ "#" + makeActivityFeedID(issue.GetNumber()) + " h2" }
+              hx-swap="afterend"
+            >
+              <textarea class="w-full p-1 min-h-32" name="comment"></textarea>
+              <div class="flex gap-2 mt-2">
+                @Button(ButtonOptions{AlpineOnClick: "open = false"}) {
+                  Cancel
+                }
+                @Button(ButtonOptions{TypeSubmit: true, Primary: true}) {
+                  Submit
+                }
               </div>
-            </article>
-          }
-        </div>
-      }
+              <hr class="my-2 border-white" />
+            </form>
+          </template>
+          <template x-if="!open">
+            @Button(ButtonOptions{AlpineOnClick: "open = true"}) {
+              Add comment
+            }
+          </template>
+        </article>
+      </div>
     </div>
   </div>
+}
+
+templ CommentBox(issueActivity *pb_issue.IssueActivity, userMap map[uint64]*pb_user.User) {
+  <article class="bg-slate-200 rounded-xl border">
+    <header class="px-5 py-2">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg">
+          @User(userMap[issueActivity.GetTriggerUser()], UserOptions{})
+        </h3>
+        @Time(issueActivity.GetCreatedAt(), TimeOptions{})
+      </div>
+      <hr class="my-2 border-white" />
+    </header>
+    <div class="px-5 pb-5">
+      <p>{ issueActivity.GetBody() }</p>
+      <hr class="my-2 border-white" />
+    </div>
+  </article>
 }
