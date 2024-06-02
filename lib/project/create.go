@@ -27,9 +27,12 @@ func Create(db *badger.DB, opts CreateOptions) (uint64, error) {
 	projectKey[0] = database.ProjectPrefix
 	binary.PutUvarint(projectKey[1:], projectNo)
 
+	nowUnix := time.Now().Unix()
+
 	projectVal, err := proto.Marshal(&pb_project.Project{
 		Number:    projectNo,
-		CreatedAt: time.Now().Unix(),
+		CreatedAt: nowUnix,
+		UpdatedAt: nowUnix,
 		Name:      opts.Title,
 		Public:    opts.Public,
 		Members:   []*pb_project.Member{},

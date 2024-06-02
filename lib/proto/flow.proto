@@ -13,6 +13,8 @@ message FlowRequirement {
 
 message FlowActions {
   string title = 1;
+  bool remove_all_assignees = 5;
+  repeated uint64 assign_user = 8;
   reserved 20, 21;
   repeated uint64 add_tag_ids = 22;
   repeated uint64 remove_tag_ids = 23;

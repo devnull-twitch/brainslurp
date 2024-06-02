@@ -149,7 +149,7 @@ func main() {
 		},
 		Activities: []*pb_issue.IssueActivity{
 			{
-				CreatedAt:   time.Now().Unix(),
+				CreatedAt:   time.Now().Add(-time.Hour * 48).Unix(),
 				TriggerUser: userNo,
 				Body:        "This is a message",
 			},
@@ -159,7 +159,7 @@ func main() {
 				Body:        "This is a message",
 			},
 			{
-				CreatedAt:   time.Now().Add(-time.Hour * 48).Unix(),
+				CreatedAt:   time.Now().Unix(),
 				TriggerUser: userNo,
 				Body:        "This is a message",
 			},

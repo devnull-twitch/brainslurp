@@ -46,33 +46,7 @@ func HandleNewIssueTag(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 					return
 				}
 
-				tagMap := make(map[uint64]*pb_tag.Tag)
-				tagList, err := tag.List(db, projectObj.GetNumber())
-				if err != nil {
-					pages.Error("Error loading tags").Render(r.Context(), w)
-					return
-				}
-				for _, tagObj := range tagList {
-					tagMap[tagObj.GetNumber()] = tagObj
-				}
-
-				userNos := make([]uint64, len(projectObj.GetMembers()))
-				for i, membership := range projectObj.GetMembers() {
-					userNos[i] = membership.GetUserNo()
-				}
-				projectUsers, err := user.List(db, userNos)
-				if err != nil {
-					pages.Error("Error loading users").Render(r.Context(), w)
-					return
-				}
-				userMap := make(map[uint64]*pb_user.User)
-				for _, memberUserObj := range projectUsers {
-					userMap[memberUserObj.GetNumber()] = memberUserObj
-				}
-
-				if r.Header.Get("HX-Request") != "" {
-					shared.IssueRow(projectObj.GetNumber(), modIssue, issueFlows, tagMap, userMap).Render(r.Context(), w)
-				}
+				renderIssueRow(db, projectObj, modIssue, issueFlows, r, w)
 			},
 		)
 	}

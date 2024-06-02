@@ -112,6 +112,14 @@ func processFlow(flowAction *pb_flow.FlowActions, issue *pb_issue.Issue) {
 		}
 	}
 
+	if flowAction.GetRemoveAllAssignees() {
+		issue.AssignedTo = []uint64{}
+	}
+
+	if len(flowAction.GetAssignUser()) > 0 {
+		issue.AssignedTo = append(issue.AssignedTo, flowAction.GetAssignUser()...)
+	}
+
 	issue.TagNumbers = newTags
 }
 

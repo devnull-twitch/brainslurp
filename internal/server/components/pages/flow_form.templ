@@ -4,12 +4,18 @@ import "fmt"
 import "github.com/devnull-twitch/brainslurp/internal/server/components/shared"
 import pb_tag "github.com/devnull-twitch/brainslurp/lib/proto/tag"
 import pb_flow "github.com/devnull-twitch/brainslurp/lib/proto/flow"
+import pb_user "github.com/devnull-twitch/brainslurp/lib/proto/user"
 
-templ FlowForm(projectNo uint64, editObj *pb_flow.Flow, tags []*pb_tag.Tag) {
+templ FlowForm(
+  projectNo uint64,
+  editObj *pb_flow.Flow,
+  tags []*pb_tag.Tag,
+  projectUsers []*pb_user.User,
+) {
   <html>
 		@header("Create new flow")
     @body(projectNo) {
-		  @FlowFormBody(projectNo, editObj, tags)
+		  @FlowFormBody(projectNo, editObj, tags, projectUsers)
     }
 	</html>
 }
@@ -87,12 +93,24 @@ func createFlowFormAlpineData(editObj *pb_flow.Flow) string {
     actions: [`)
   if editObj != nil {
     for _, flowAct := range editObj.GetActions() {
+      removeAllAssigneesBoolOption := "false"
+      if flowAct.GetRemoveAllAssignees() {
+        removeAllAssigneesBoolOption = "true"
+      }
+
+      assignUser := uint64(0)
+      if len(flowAct.GetAssignUser()) > 0 {
+        assignUser = flowAct.GetAssignUser()[0]
+      }
+
       builder.WriteString(fmt.Sprintf(
         `
           {
             title: "%s",
             add: [%s],
             remove: [%s],
+            remove_all_assignees: %s,
+            assign_user: %d,
             add_add() { 
               this.add.push(0);
             },
@@ -115,6 +133,8 @@ func createFlowFormAlpineData(editObj *pb_flow.Flow) string {
         flowAct.GetTitle(),
         strings.Join(convertSliceToString(flowAct.GetAddTagIds()), ","),
         strings.Join(convertSliceToString(flowAct.GetRemoveTagIds()), ","),
+        removeAllAssigneesBoolOption,
+        assignUser,
       ))
     }
   }
@@ -178,7 +198,12 @@ func createFlowFormAlpineData(editObj *pb_flow.Flow) string {
     return builder.String()
 }
 
-templ FlowFormBody(projectNo uint64, editObj *pb_flow.Flow, tags []*pb_tag.Tag) {
+templ FlowFormBody(
+  projectNo uint64,
+  editObj *pb_flow.Flow,
+  tags []*pb_tag.Tag,
+  projectUsers []*pb_user.User,
+) {
   <div class="container mx-auto">
     <h2 class="text-2xl underline pb-4">Create new flow</h2>
     <div class="w-1/3">
@@ -186,7 +211,6 @@ templ FlowFormBody(projectNo uint64, editObj *pb_flow.Flow, tags []*pb_tag.Tag) 
         method="POST"
         hx-post={ string(makeFlowCreateSaveForm(projectNo, editObj.GetNumber())) }
         hx-target="#body-content"
-        hx-push-url="true"
       >
         @shared.FormField("title", "Title", "text", shared.FormFieldOptions{Placeholder: "My new flow", InitialValue: editObj.GetTitle()})
         <div x-data={ createFlowFormAlpineData(editObj) }>
@@ -378,6 +402,46 @@ templ FlowFormBody(projectNo uint64, editObj *pb_flow.Flow, tags []*pb_tag.Tag) 
                   }) {
                     @shared.Codicon("add", true)
                   }
+                </div>
+
+                <div
+                  x-id="[ 'remove_assignee' ]" 
+                  class={ "flex flex-col mb-4" }
+                >
+                  <label x-bind:for="$id('remove_assignee')" classs="mb-1">Remove all assignees:</label>
+                  <input 
+                    x-bind:name="'act_' + actIndex + '_remove_assignees'"
+                    x-bind:id="$id('remove_assignee')"
+                    type="checkbox"
+                    x-bind:checked="act.remove_all_assignees"
+                  />
+                </div>
+
+                <div
+                  x-id="[ 'assign_user' ]" 
+                  class={ "flex flex-col mb-4" }
+                >
+                  <label x-bind:for="$id('assign_user')" classs="mb-1">Assign user/team:</label>
+                  <select 
+                    class="p-2 rounded border border-slate-700"
+                    x-bind:name="'act_' + actIndex + '_assign_user'"
+                    x-bind:id="$id('assign_user')"
+                  >
+                    <option
+                      x-bind:selected="act.assign_user === 0 && 'true'"
+                      value=""
+                    >
+                      None
+                    </option>
+                    for _, userObj := range projectUsers {
+                      <option 
+                        x-bind:selected={ fmt.Sprintf("act.assign_user === %d && 'true'", userObj.GetNumber()) }
+                        value={ fmt.Sprintf("%d", userObj.GetNumber()) }
+                      >
+                        { userObj.GetName() }
+                      </option>
+                    }
+                  </select>
                 </div>
               </div>
             }

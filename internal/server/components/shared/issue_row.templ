@@ -55,6 +55,10 @@ func makeUnassignActionURL(projectNo uint64, issueNo uint64, userNo uint64) temp
   return templ.URL(fmt.Sprintf("/project/%d/issue/%d/unassign/%d", projectNo, issueNo, userNo))
 }
 
+func makeAssignActionURL(projectNo uint64, issueNo uint64) templ.SafeURL {
+  return templ.URL(fmt.Sprintf("/project/%d/issue/%d/assign", projectNo, issueNo))
+}
+
 func makeNewCommentURL(projectNo uint64, issueNo uint64) templ.SafeURL {
   return templ.URL(fmt.Sprintf("/project/%d/issue/%d/comment", projectNo, issueNo))
 }
@@ -130,12 +134,12 @@ templ IssueRow(
 
       if len(issue.GetAssignedTo()) > 0 {
         <div class="flex-initial flex gap-1 mr-2">
-        for _, assigneUserNo := range issue.GetAssignedTo() {
-          @User(userMap[assigneUserNo], UserOptions{
-            IdPrefix: makeUserPrefix(issue.GetNumber()),
-            UnassignURL: makeUnassignActionURL(projectNo, issue.GetNumber(), assigneUserNo),
-          })
-        }
+          for _, assigneUserNo := range issue.GetAssignedTo() {
+            @User(userMap[assigneUserNo], UserOptions{
+              IdPrefix: makeUserPrefix(issue.GetNumber()),
+              UnassignURL: makeUnassignActionURL(projectNo, issue.GetNumber(), assigneUserNo),
+            })
+          }
         </div>
       }
 
@@ -198,13 +202,13 @@ templ IssueRow(
         </div>
       }
 
-      <div class="flex justify-between mx-10">  
+      <div class="flex gap-3 justify-between mx-10">  
         <!-- Tag Form -->
         <form
           hx-post={ string(makeNewTagURL(projectNo, issue.GetNumber())) }
           hx-target={ "#" + makeIssueRowID(issue.GetNumber()) }
           hx-swap="outerHTML"
-          class="w-1/3 flex-initial pb-2"
+          class="flex-1 pb-2"
         >
           <h4 class="text-lg pb-1 italic">Add Tag</h4>
           @FormDropdownField("tag_id", "Tag", FormFieldOptions{}) {
@@ -219,8 +223,30 @@ templ IssueRow(
           }
         </form>
 
+        <form
+          hx-post={ string(makeAssignActionURL(projectNo, issue.GetNumber())) }
+          hx-target={ "#" + makeIssueRowID(issue.GetNumber()) }
+          hx-swap="outerHTML"
+          class="flex-1 pb-2"
+        >
+          <h4 class="text-lg pb-1 italic">Add Assignee</h4>
+          @FormDropdownField("assign_user", "User", FormFieldOptions{}) {
+            for _, projectUser := range userMap {
+              <option value={ fmt.Sprintf("%d", projectUser.GetNumber()) }>
+                { projectUser.GetName() }
+              </option>
+            }
+          }
+          @Button(ButtonOptions{
+            TypeSubmit: true,
+            Small: true,
+          }) {
+            Assign
+          }
+        </form>
+
         <!-- Flow list -->
-        <div class="w-1/3 shrink">
+        <div class="flex-1">
           <h4 class="text-lg pb-1 italic">Connected flows</h4>
           <ol class="list-disc list-inside">
             for _, issueFlow := range issueFlows {

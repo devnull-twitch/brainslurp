@@ -15,8 +15,14 @@ import "fmt"
 import "github.com/devnull-twitch/brainslurp/internal/server/components/shared"
 import pb_tag "github.com/devnull-twitch/brainslurp/lib/proto/tag"
 import pb_flow "github.com/devnull-twitch/brainslurp/lib/proto/flow"
+import pb_user "github.com/devnull-twitch/brainslurp/lib/proto/user"
 
-func FlowForm(projectNo uint64, editObj *pb_flow.Flow, tags []*pb_tag.Tag) templ.Component {
+func FlowForm(
+	projectNo uint64,
+	editObj *pb_flow.Flow,
+	tags []*pb_tag.Tag,
+	projectUsers []*pb_user.User,
+) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 		if !templ_7745c5c3_IsBuffer {
@@ -43,7 +49,7 @@ func FlowForm(projectNo uint64, editObj *pb_flow.Flow, tags []*pb_tag.Tag) templ
 				templ_7745c5c3_Buffer = templ.GetBuffer()
 				defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 			}
-			templ_7745c5c3_Err = FlowFormBody(projectNo, editObj, tags).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = FlowFormBody(projectNo, editObj, tags, projectUsers).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -146,12 +152,24 @@ func createFlowFormAlpineData(editObj *pb_flow.Flow) string {
     actions: [`)
 	if editObj != nil {
 		for _, flowAct := range editObj.GetActions() {
+			removeAllAssigneesBoolOption := "false"
+			if flowAct.GetRemoveAllAssignees() {
+				removeAllAssigneesBoolOption = "true"
+			}
+
+			assignUser := uint64(0)
+			if len(flowAct.GetAssignUser()) > 0 {
+				assignUser = flowAct.GetAssignUser()[0]
+			}
+
 			builder.WriteString(fmt.Sprintf(
 				`
           {
             title: "%s",
             add: [%s],
             remove: [%s],
+            remove_all_assignees: %s,
+            assign_user: %d,
             add_add() { 
               this.add.push(0);
             },
@@ -174,6 +192,8 @@ func createFlowFormAlpineData(editObj *pb_flow.Flow) string {
 				flowAct.GetTitle(),
 				strings.Join(convertSliceToString(flowAct.GetAddTagIds()), ","),
 				strings.Join(convertSliceToString(flowAct.GetRemoveTagIds()), ","),
+				removeAllAssigneesBoolOption,
+				assignUser,
 			))
 		}
 	}
@@ -237,7 +257,12 @@ func createFlowFormAlpineData(editObj *pb_flow.Flow) string {
 	return builder.String()
 }
 
-func FlowFormBody(projectNo uint64, editObj *pb_flow.Flow, tags []*pb_tag.Tag) templ.Component {
+func FlowFormBody(
+	projectNo uint64,
+	editObj *pb_flow.Flow,
+	tags []*pb_tag.Tag,
+	projectUsers []*pb_user.User,
+) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 		if !templ_7745c5c3_IsBuffer {
@@ -257,13 +282,13 @@ func FlowFormBody(projectNo uint64, editObj *pb_flow.Flow, tags []*pb_tag.Tag) t
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(string(makeFlowCreateSaveForm(projectNo, editObj.GetNumber())))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 187, Col: 80}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 212, Col: 80}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" hx-target=\"#body-content\" hx-push-url=\"true\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" hx-target=\"#body-content\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -278,7 +303,7 @@ func FlowFormBody(projectNo uint64, editObj *pb_flow.Flow, tags []*pb_tag.Tag) t
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(createFlowFormAlpineData(editObj))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 192, Col: 55}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 216, Col: 55}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -306,7 +331,7 @@ func FlowFormBody(projectNo uint64, editObj *pb_flow.Flow, tags []*pb_tag.Tag) t
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", tagObj.GetNumber()))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 237, Col: 71}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 261, Col: 71}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -319,7 +344,7 @@ func FlowFormBody(projectNo uint64, editObj *pb_flow.Flow, tags []*pb_tag.Tag) t
 				var templ_7745c5c3_Var8 string
 				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("selectedId === %d && 'true'", tagObj.GetNumber()))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 238, Col: 106}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 262, Col: 106}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {
@@ -332,7 +357,7 @@ func FlowFormBody(projectNo uint64, editObj *pb_flow.Flow, tags []*pb_tag.Tag) t
 				var templ_7745c5c3_Var9 string
 				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(tagObj.GetTitle())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 240, Col: 45}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 264, Col: 45}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 				if templ_7745c5c3_Err != nil {
@@ -407,7 +432,7 @@ func FlowFormBody(projectNo uint64, editObj *pb_flow.Flow, tags []*pb_tag.Tag) t
 				var templ_7745c5c3_Var12 string
 				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", tagObj.GetNumber()))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 268, Col: 71}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 292, Col: 71}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 				if templ_7745c5c3_Err != nil {
@@ -420,7 +445,7 @@ func FlowFormBody(projectNo uint64, editObj *pb_flow.Flow, tags []*pb_tag.Tag) t
 				var templ_7745c5c3_Var13 string
 				templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("selectedId === %d && 'true'", tagObj.GetNumber()))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 269, Col: 106}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 293, Col: 106}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 				if templ_7745c5c3_Err != nil {
@@ -433,7 +458,7 @@ func FlowFormBody(projectNo uint64, editObj *pb_flow.Flow, tags []*pb_tag.Tag) t
 				var templ_7745c5c3_Var14 string
 				templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(tagObj.GetTitle())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 271, Col: 45}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 295, Col: 45}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 				if templ_7745c5c3_Err != nil {
@@ -604,7 +629,7 @@ func FlowFormBody(projectNo uint64, editObj *pb_flow.Flow, tags []*pb_tag.Tag) t
 				var templ_7745c5c3_Var22 string
 				templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", tagObj.GetNumber()))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 328, Col: 71}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 352, Col: 71}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 				if templ_7745c5c3_Err != nil {
@@ -617,7 +642,7 @@ func FlowFormBody(projectNo uint64, editObj *pb_flow.Flow, tags []*pb_tag.Tag) t
 				var templ_7745c5c3_Var23 string
 				templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("selectedId === %d && 'true'", tagObj.GetNumber()))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 329, Col: 106}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 353, Col: 106}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 				if templ_7745c5c3_Err != nil {
@@ -630,7 +655,7 @@ func FlowFormBody(projectNo uint64, editObj *pb_flow.Flow, tags []*pb_tag.Tag) t
 				var templ_7745c5c3_Var24 string
 				templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(tagObj.GetTitle())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 331, Col: 45}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 355, Col: 45}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 				if templ_7745c5c3_Err != nil {
@@ -705,7 +730,7 @@ func FlowFormBody(projectNo uint64, editObj *pb_flow.Flow, tags []*pb_tag.Tag) t
 				var templ_7745c5c3_Var27 string
 				templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", tagObj.GetNumber()))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 359, Col: 71}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 383, Col: 71}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 				if templ_7745c5c3_Err != nil {
@@ -718,7 +743,7 @@ func FlowFormBody(projectNo uint64, editObj *pb_flow.Flow, tags []*pb_tag.Tag) t
 				var templ_7745c5c3_Var28 string
 				templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("selectedId === %d && 'true'", tagObj.GetNumber()))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 360, Col: 106}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 384, Col: 106}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 				if templ_7745c5c3_Err != nil {
@@ -731,7 +756,7 @@ func FlowFormBody(projectNo uint64, editObj *pb_flow.Flow, tags []*pb_tag.Tag) t
 				var templ_7745c5c3_Var29 string
 				templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(tagObj.GetTitle())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 362, Col: 45}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 386, Col: 45}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 				if templ_7745c5c3_Err != nil {
@@ -794,7 +819,100 @@ func FlowFormBody(projectNo uint64, editObj *pb_flow.Flow, tags []*pb_tag.Tag) t
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div></div>")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var32 = []any{"flex flex-col mb-4"}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var32...)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div x-id=\"[ &#39;remove_assignee&#39; ]\" class=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var33 string
+			templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var32).String())
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 1, Col: 0}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"><label x-bind:for=\"$id(&#39;remove_assignee&#39;)\" classs=\"mb-1\">Remove all assignees:</label> <input x-bind:name=\"&#39;act_&#39; + actIndex + &#39;_remove_assignees&#39;\" x-bind:id=\"$id(&#39;remove_assignee&#39;)\" type=\"checkbox\" x-bind:checked=\"act.remove_all_assignees\"></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var34 = []any{"flex flex-col mb-4"}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var34...)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div x-id=\"[ &#39;assign_user&#39; ]\" class=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var35 string
+			templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var34).String())
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 1, Col: 0}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"><label x-bind:for=\"$id(&#39;assign_user&#39;)\" classs=\"mb-1\">Assign user/team:</label> <select class=\"p-2 rounded border border-slate-700\" x-bind:name=\"&#39;act_&#39; + actIndex + &#39;_assign_user&#39;\" x-bind:id=\"$id(&#39;assign_user&#39;)\"><option x-bind:selected=\"act.assign_user === 0 &amp;&amp; &#39;true&#39;\" value=\"\">None</option> ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			for _, userObj := range projectUsers {
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<option x-bind:selected=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var36 string
+				templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("act.assign_user === %d && 'true'", userObj.GetNumber()))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 438, Col: 110}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" value=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var37 string
+				templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", userObj.GetNumber()))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 439, Col: 70}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var38 string
+				templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(userObj.GetName())
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/server/components/pages/flow_form.templ`, Line: 441, Col: 43}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</option>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</select></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -811,7 +929,7 @@ func FlowFormBody(projectNo uint64, editObj *pb_flow.Flow, tags []*pb_tag.Tag) t
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Var32 := templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Var39 := templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 			if !templ_7745c5c3_IsBuffer {
 				templ_7745c5c3_Buffer = templ.GetBuffer()
@@ -829,7 +947,7 @@ func FlowFormBody(projectNo uint64, editObj *pb_flow.Flow, tags []*pb_tag.Tag) t
 		templ_7745c5c3_Err = shared.Button(shared.ButtonOptions{
 			AlpineOnClick: "pop_action()",
 			Small:         true,
-		}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var32), templ_7745c5c3_Buffer)
+		}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var39), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -837,7 +955,7 @@ func FlowFormBody(projectNo uint64, editObj *pb_flow.Flow, tags []*pb_tag.Tag) t
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Var33 := templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Var40 := templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 			if !templ_7745c5c3_IsBuffer {
 				templ_7745c5c3_Buffer = templ.GetBuffer()
@@ -854,7 +972,7 @@ func FlowFormBody(projectNo uint64, editObj *pb_flow.Flow, tags []*pb_tag.Tag) t
 		})
 		templ_7745c5c3_Err = shared.Button(shared.ButtonOptions{
 			AlpineOnClick: "push_actions()",
-		}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var33), templ_7745c5c3_Buffer)
+		}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var40), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -862,7 +980,7 @@ func FlowFormBody(projectNo uint64, editObj *pb_flow.Flow, tags []*pb_tag.Tag) t
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Var34 := templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Var41 := templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 			if !templ_7745c5c3_IsBuffer {
 				templ_7745c5c3_Buffer = templ.GetBuffer()
@@ -877,7 +995,7 @@ func FlowFormBody(projectNo uint64, editObj *pb_flow.Flow, tags []*pb_tag.Tag) t
 			}
 			return templ_7745c5c3_Err
 		})
-		templ_7745c5c3_Err = shared.Button(shared.ButtonOptions{TypeSubmit: true, Primary: true}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var34), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = shared.Button(shared.ButtonOptions{TypeSubmit: true, Primary: true}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var41), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

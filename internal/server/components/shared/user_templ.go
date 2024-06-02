@@ -99,7 +99,7 @@ func User(user *pb_user.User, opts UserOptions) templ.Component {
 				}
 				return templ_7745c5c3_Err
 			})
-			templ_7745c5c3_Err = HxLink(opts.UnassignURL, makeUserID(opts.IdPrefix, user.GetNumber()), HxLinkOptions{
+			templ_7745c5c3_Err = HxLink(opts.UnassignURL, "#"+makeUserID(opts.IdPrefix, user.GetNumber()), HxLinkOptions{
 				Method: "delete",
 				Swap:   "outerHTML",
 			}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var4), templ_7745c5c3_Buffer)

@@ -11,6 +11,7 @@ import (
 	pb_flow "github.com/devnull-twitch/brainslurp/lib/proto/flow"
 	"github.com/devnull-twitch/brainslurp/lib/proto/issue"
 	"github.com/devnull-twitch/brainslurp/lib/tag"
+	"github.com/devnull-twitch/brainslurp/lib/user"
 	"github.com/dgraph-io/badger/v4"
 	"github.com/sirupsen/logrus"
 )
@@ -42,10 +43,21 @@ func renderFlowCreateForm(ctx context.Context, w http.ResponseWriter, r *http.Re
 		pages.Error("Internal System Error").Render(r.Context(), w)
 	}
 
+	userNos := make([]uint64, len(projectObj.GetMembers()))
+	for i, membership := range projectObj.GetMembers() {
+		userNos[i] = membership.GetUserNo()
+	}
+	projectUsers, err := user.List(db, userNos)
+	if err != nil {
+		logrus.WithError(err).Error("error loading users")
+		pages.Error("Internal server error").Render(r.Context(), w)
+		return
+	}
+
 	if r.Header.Get("HX-Request") != "" {
-		pages.FlowFormBody(projectObj.GetNumber(), nil, tagList).Render(r.Context(), w)
+		pages.FlowFormBody(projectObj.GetNumber(), nil, tagList, projectUsers).Render(r.Context(), w)
 	} else {
-		pages.FlowForm(projectObj.GetNumber(), nil, tagList).Render(r.Context(), w)
+		pages.FlowForm(projectObj.GetNumber(), nil, tagList, projectUsers).Render(r.Context(), w)
 	}
 }
 
@@ -160,15 +172,33 @@ func parseFormFlow(r *http.Request) (*pb_flow.Flow, error) {
 		actTagsAdd, hasAddTags := r.Form[fmt.Sprintf("act_%d_add", actIndex)]
 		actTagsRemove, hasRemoveTags := r.Form[fmt.Sprintf("act_%d_remove", actIndex)]
 
-		if !hasAddTags && !hasRemoveTags {
+		removeAllAssignees := false
+		if r.Form.Get(fmt.Sprintf("act_%d_remove_assignees", actIndex)) != "" {
+			removeAllAssignees = true
+		}
+
+		assignUserInput := r.Form.Get(fmt.Sprintf("act_%d_assign_user", actIndex))
+		assignUserNumbers := make([]uint64, 0)
+		if assignUserInput != "" && assignUserInput != "0" {
+			userNo, err := strconv.Atoi(assignUserInput)
+			if err != nil {
+				logrus.WithError(err).Warn("unable to convert assignee user number to int")
+			} else {
+				assignUserNumbers = append(assignUserNumbers, uint64(userNo))
+			}
+		}
+
+		if !hasAddTags && !hasRemoveTags && len(assignUserNumbers) == 0 && !removeAllAssignees {
 			hasActs = false
 			continue
 		}
 
 		actions = append(actions, &pb_flow.FlowActions{
-			Title:        r.Form.Get(fmt.Sprintf("act_%d_title", actIndex)),
-			AddTagIds:    StrToIntSlice[uint64](actTagsAdd),
-			RemoveTagIds: StrToIntSlice[uint64](actTagsRemove),
+			Title:              r.Form.Get(fmt.Sprintf("act_%d_title", actIndex)),
+			AddTagIds:          StrToIntSlice[uint64](actTagsAdd),
+			RemoveTagIds:       StrToIntSlice[uint64](actTagsRemove),
+			RemoveAllAssignees: removeAllAssignees,
+			AssignUser:         assignUserNumbers,
 		})
 
 		actIndex += 1

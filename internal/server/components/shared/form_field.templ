@@ -17,7 +17,13 @@ type (
     Placeholder string
     Required bool
     InitialValue string
+    Checked bool
     HXOptions FormHXOptions
+  }
+  FormInputOptions struct {
+    Value string
+    Placeholder string
+    Checked bool
   }
 )
 
@@ -26,24 +32,37 @@ templ FormField(name string, label string, fieldType string, opts FormFieldOptio
     if fieldType == "color" {
       <label for={ name } classs="mb-1">{ label }:</label>
     }
-    @FormInput(name, fieldType, opts.InitialValue, label)
+    @FormInput(name, fieldType, FormInputOptions{
+      Placeholder: label,
+      Value: opts.InitialValue,
+      Checked: opts.Checked,
+    })
   } else {
     <div class={ "flex flex-col", templ.KV("mb-8", opts.ExtraSpacey), templ.KV("mb-4", !opts.ExtraSpacey) }>
       <label for={ name } classs="mb-1">{ label }:</label>
-      @FormInput(name, fieldType, opts.InitialValue, opts.Placeholder)
+      @FormInput(name, fieldType, FormInputOptions{
+        Value: opts.InitialValue,
+        Placeholder: opts.Placeholder,
+        Checked: opts.Checked,
+      })
     </div>
   }
 }
 
-templ FormInput(name string, fieldType string, value string, placeholder string) {
+templ FormInput(name string, fieldType string, opts FormInputOptions) {
   <input 
     class={ "p-2 rounded", templ.KV("border border-slate-700", fieldType != "color") } 
     type={ fieldType }
-    name={ name }
+    name={ name }a
     id={ name }
-    placeholder={ placeholder }
-    if value != "" {
-      value={ value }
+    if opts.Placeholder != "" {
+      placeholder={ opts.Placeholder }
+    }
+    if opts.Value != "" {
+      value={ opts.Value }
+    }
+    if opts.Checked {
+      checked
     }
   />
 }

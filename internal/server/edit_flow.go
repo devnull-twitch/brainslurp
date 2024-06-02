@@ -2,12 +2,16 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/devnull-twitch/brainslurp/internal/server/components/pages"
 	"github.com/devnull-twitch/brainslurp/lib/flows"
+	pb_flow "github.com/devnull-twitch/brainslurp/lib/proto/flow"
+	pb_project "github.com/devnull-twitch/brainslurp/lib/proto/project"
 	"github.com/devnull-twitch/brainslurp/lib/tag"
+	"github.com/devnull-twitch/brainslurp/lib/user"
 	"github.com/dgraph-io/badger/v4"
 	"github.com/sirupsen/logrus"
 )
@@ -43,38 +47,47 @@ func HandleFlowEdit(db *badger.DB) func(http.ResponseWriter, *http.Request) {
 			authUserWithProjectNo,
 			checkFlowNumber,
 			func(ctx context.Context, w http.ResponseWriter, r *http.Request, next nextCall) {
-				projectNo, _ := strconv.Atoi(r.PathValue("projectNo"))
-				flowNo, _ := strconv.Atoi(r.PathValue("flowNumber"))
+				projectObj := getProjectFromContext(ctx)
+				flowObj := getFlowFromContext(ctx)
 
 				if r.Method == "GET" {
-					renderFlowEditForm(db, uint64(projectNo), uint64(flowNo), w, r)
+					renderFlowEditForm(db, projectObj, flowObj, w, r)
 				}
 				if r.Method == "POST" {
-					handleEditFlowSubmit(db, uint64(projectNo), uint64(flowNo), w, r)
+					handleEditFlowSubmit(db, projectObj, flowObj, w, r)
 				}
 			},
 		)
 	}
 }
 
-func renderFlowEditForm(db *badger.DB, projectNo uint64, flowNo uint64, w http.ResponseWriter, r *http.Request) {
-	flow, _ := flows.Get(db, projectNo, flowNo)
-
-	projectTags, err := tag.List(db, projectNo)
+func renderFlowEditForm(db *badger.DB, projectObj *pb_project.Project, flowObj *pb_flow.Flow, w http.ResponseWriter, r *http.Request) {
+	projectTags, err := tag.List(db, projectObj.GetNumber())
 	if err != nil {
 		logrus.WithError(err).Warn("error loading tags")
 		w.WriteHeader(http.StatusInternalServerError)
 		pages.Error("Server error").Render(r.Context(), w)
 	}
 
+	userNos := make([]uint64, len(projectObj.GetMembers()))
+	for i, membership := range projectObj.GetMembers() {
+		userNos[i] = membership.GetUserNo()
+	}
+	projectUsers, err := user.List(db, userNos)
+	if err != nil {
+		logrus.WithError(err).Error("error loading users")
+		pages.Error("Internal server error").Render(r.Context(), w)
+		return
+	}
+
 	if r.Header.Get("HX-Request") != "" {
-		pages.FlowFormBody(projectNo, flow, projectTags).Render(r.Context(), w)
+		pages.FlowFormBody(projectObj.GetNumber(), flowObj, projectTags, projectUsers).Render(r.Context(), w)
 	} else {
-		pages.FlowForm(projectNo, flow, projectTags).Render(r.Context(), w)
+		pages.FlowForm(projectObj.GetNumber(), flowObj, projectTags, projectUsers).Render(r.Context(), w)
 	}
 }
 
-func handleEditFlowSubmit(db *badger.DB, projectNo uint64, flowNo uint64, w http.ResponseWriter, r *http.Request) {
+func handleEditFlowSubmit(db *badger.DB, projectObj *pb_project.Project, flowObj *pb_flow.Flow, w http.ResponseWriter, r *http.Request) {
 	flowEditObj, err := parseFormFlow(r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -82,14 +95,31 @@ func handleEditFlowSubmit(db *badger.DB, projectNo uint64, flowNo uint64, w http
 		return
 	}
 
-	flow, _ := flows.Get(db, projectNo, flowNo)
-	flow.Title = flowEditObj.GetTitle()
-	flow.Requirements = flowEditObj.GetRequirements()
-	flow.Actions = flowEditObj.GetActions()
+	flowObj.Title = flowEditObj.GetTitle()
+	flowObj.Requirements = flowEditObj.GetRequirements()
+	flowObj.Actions = flowEditObj.GetActions()
 
-	if err := flows.Update(db, projectNo, flow); err != nil {
+	if err := flows.Update(db, projectObj.GetNumber(), flowObj); err != nil {
+		logrus.WithError(err).Error("unable to update flow")
 		w.WriteHeader(http.StatusInternalServerError)
-		pages.Error("error saving flow").Render(r.Context(), w)
 		return
+	}
+
+	flows, err := flows.List(db, projectObj.GetNumber())
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"error":      err,
+			"path_value": "projectNo",
+		}).Warn("URL parsing error")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("HX-Push-Url", fmt.Sprintf("/project/%d/flows", projectObj.GetNumber()))
+
+	if r.Header.Get("HX-Request") != "" {
+		pages.FlowListBody(projectObj.GetNumber(), flows).Render(r.Context(), w)
+	} else {
+		pages.FlowList(projectObj.GetNumber(), flows).Render(r.Context(), w)
 	}
 }

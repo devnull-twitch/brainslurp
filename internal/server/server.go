@@ -13,6 +13,7 @@ func Run(db *badger.DB) error {
 	http.HandleFunc("/{$}", LoginHandler(db))
 
 	http.HandleFunc("GET /projects", HandleProjectListing(db))
+	http.HandleFunc("/project/{projectNo}/settings", HandleProjectSettings(db))
 
 	http.HandleFunc("GET /project/{projectNo}/issues", HandleIssueList(db))
 	http.HandleFunc("GET /project/{projectNo}/issues/view/{viewNo}", HandleIssueList(db))
@@ -22,6 +23,8 @@ func Run(db *badger.DB) error {
 	http.HandleFunc("DELETE /project/{projectNo}/issue/{issueNo}/tag/{tagNumber}", HandleIssueTag(db))
 	http.HandleFunc("POST /project/{projectNo}/issue/{issueNo}/flow/{flowNumber}/action/{actionIndex}", HandleFlowActionTrigger(db))
 	http.HandleFunc("POST /project/{projectNo}/issue/{issueNo}/comment", HandleNewIssueComment(db))
+	http.HandleFunc("DELETE /project/{projectNo}/issue/{issueNo}/unassign/{userNo}", HandleIssueUnassign(db))
+	http.HandleFunc("POST /project/{projectNo}/issue/{issueNo}/assign", HandleIssueAssign(db))
 
 	http.HandleFunc("GET /project/{projectNo}/flows", HandleFlowList(db))
 	http.HandleFunc("/project/{projectNo}/flows/new", HandleFlowCreate(db))
